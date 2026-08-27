@@ -1,26 +1,263 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Bistrot Chic & Terroir Moderne Palette */
+    --background: #FDFBF7;
+    --foreground: #1D1917;
+    
+    /* Wine / Bordeaux */
+    --wine-950: #380B11;
+    --wine-900: #4E0F17;
+    --wine-800: #58111A;
+    --wine-700: #722F37;
+    --wine-600: #8B2635;
+    --wine-500: #A83244;
+    --wine-100: #F9EBEB;
+
+    /* Forest / Sapin */
+    --forest-900: #14281D;
+    --forest-800: #1B3B2B;
+    --forest-700: #264E3A;
+    --forest-600: #34684E;
+    --forest-100: #EAF2ED;
+
+    /* Linen & Warm Cream */
+    --cream-50: #FCFBF9;
+    --cream-100: #F6F1EA;
+    --cream-200: #EAE2D8;
+    --cream-300: #D8CCC0;
+    
+    /* Gold & Champagne */
+    --gold-500: #D4AF37;
+    --gold-400: #E5C158;
+    --gold-300: #F3E5AB;
+    --gold-glow: rgba(212, 175, 55, 0.25);
+
+    /* UI Surfaces */
+    --card: #FFFFFF;
+    --card-foreground: #1D1917;
+    --popover: #FFFFFF;
+    --popover-foreground: #1D1917;
+    --primary: #58111A;
+    --primary-foreground: #FDFBF7;
+    --secondary: #1B3B2B;
+    --secondary-foreground: #FDFBF7;
+    --muted: #F6F1EA;
+    --muted-foreground: #78716C;
+    --accent: #D4AF37;
+    --accent-foreground: #380B11;
+    --destructive: #DC2626;
+    --destructive-foreground: #FFFFFF;
+    --border: #EAE2D8;
+    --input: #EAE2D8;
+    --ring: #58111A;
+    --radius: 1rem;
+  }
+
+  .dark {
+    --background: #141716;
+    --foreground: #FDFBF7;
+    --card: #1C2220;
+    --card-foreground: #FDFBF7;
+    --popover: #1C2220;
+    --popover-foreground: #FDFBF7;
+    --primary: #722F37;
+    --primary-foreground: #FDFBF7;
+    --secondary: #264E3A;
+    --secondary-foreground: #FDFBF7;
+    --muted: #242D2A;
+    --muted-foreground: #A8A29E;
+    --border: #2C3833;
+    --input: #2C3833;
   }
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
 }
+
+h1, h2, h3, .font-serif-title {
+  font-family: var(--font-playfair), Georgia, serif;
+}
+
+/* Glassmorphism Bistrot */
+.glass-bistrot {
+  background: rgba(253, 251, 247, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(234, 226, 216, 0.8);
+}
+
+.glass-bistrot-dark {
+  background: rgba(20, 24, 22, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+/* Subtle Terroir Card */
+.terroir-card {
+  background-color: #FFFFFF;
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 25px -5px rgba(88, 17, 26, 0.04), 0 8px 10px -6px rgba(27, 59, 43, 0.04);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.terroir-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 30px -10px rgba(88, 17, 26, 0.09), 0 10px 15px -3px rgba(212, 175, 55, 0.1);
+  border-color: rgba(212, 175, 55, 0.5);
+}
+
+/* Gold Highlights */
+.gold-badge {
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(229, 193, 88, 0.25) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: #58111A;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F6F1EA;
+}
+::-webkit-scrollbar-thumb {
+  background: #722F37;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #58111A;
+}
+
+/* 3D Card & Flip Perspective Utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-2000 {
+  perspective: 2000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* ======================================================== */
+/* MOTION & TEXTURE UTILITIES — BISTROT CHIC & HÉRITAGE      */
+/* ======================================================== */
+
+/* Top-Lit Inner Highlights for Bento Cards */
+.bento-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  box-shadow: 
+    0 1px 2px 0 rgba(0, 0, 0, 0.03),
+    0 10px 30px -10px rgba(88, 17, 26, 0.06),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-card:hover {
+  border-color: rgba(212, 175, 55, 0.6);
+  box-shadow: 
+    0 20px 40px -12px rgba(88, 17, 26, 0.12),
+    0 0 25px -5px rgba(212, 175, 55, 0.2),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+}
+
+/* Dark Heritage Smoked Glass */
+.glass-heritage {
+  background: rgba(20, 40, 29, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(212, 175, 55, 0.3);
+}
+
+/* Gold Text Shimmer */
+.gold-text-shimmer {
+  background: linear-gradient(120deg, #F3E5AB 0%, #D4AF37 35%, #FFFFFF 50%, #D4AF37 65%, #F3E5AB 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gold-shimmer 4s linear infinite;
+}
+
+/* Wine & Forest Gradients */
+.gradient-wine-forest {
+  background: linear-gradient(135deg, #380B11 0%, #58111A 50%, #14281D 100%);
+}
+
+.gradient-gold-aura {
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.25) 0%, rgba(88, 17, 26, 0.15) 50%, transparent 75%);
+}
+
+/* Keyframe Animations */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(0.5deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes gold-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 5s ease-in-out infinite;
+}
+
+@keyframes laserSweep {
+  0% {
+    top: 5%;
+    opacity: 0.7;
+  }
+  50% {
+    top: 92%;
+    opacity: 1;
+  }
+  100% {
+    top: 5%;
+    opacity: 0.7;
+  }
+}
+
+
