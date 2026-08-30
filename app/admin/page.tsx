@@ -160,6 +160,7 @@ export default function AdminDashboardPage() {
   const [testEmailAddress, setTestEmailAddress] = useState(user?.email || 'admin@eceterroir.fr');
   const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
   const [copiedWebhookUrl, setCopiedWebhookUrl] = useState(false);
+  const [isSyncingHelloAsso, setIsSyncingHelloAsso] = useState(false);
 
   // Form states for creation
   const [newEventTitle, setNewEventTitle] = useState('');
@@ -425,6 +426,32 @@ export default function AdminDashboardPage() {
       ]);
     } finally {
       setIsSimulatingWebhook(false);
+    }
+  };
+
+  const handleSyncHelloAsso = async () => {
+    setIsSyncingHelloAsso(true);
+    try {
+      const res = await fetch('/api/helloasso/sync', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        triggerSuccess(`Synchronisation réussie : ${data.syncedCount} commandes traitées !`);
+        setWebhookLogs((prev) => [
+          {
+            id: `log-sync-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            status: 'success',
+            message: `🔄 Sync API HelloAsso : ${data.syncedCount} commandes synchronisées.`,
+          },
+          ...prev,
+        ]);
+      } else {
+        alert(data.error || 'Erreur lors de la synchronisation HelloAsso.');
+      }
+    } catch (err: any) {
+      alert(`Erreur réseau: ${err.message}`);
+    } finally {
+      setIsSyncingHelloAsso(false);
     }
   };
 
@@ -2375,6 +2402,14 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  onClick={handleSyncHelloAsso}
+                  disabled={isSyncingHelloAsso}
+                  className="px-4 py-2.5 rounded-xl bg-[#D4AF37] hover:bg-amber-300 text-[#58111A] font-extrabold text-xs shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <RotateCcw className={`w-3.5 h-3.5 ${isSyncingHelloAsso ? 'animate-spin' : ''}`} />
+                  <span>{isSyncingHelloAsso ? 'Synchronisation...' : '🔄 Synchroniser avec HelloAsso'}</span>
+                </button>
                 <button
                   onClick={handleOpenEmailPreview}
                   className="px-4 py-2.5 rounded-xl bg-[#58111A] hover:bg-[#722F37] text-[#D4AF37] font-bold text-xs border border-[#D4AF37]/40 shadow-md transition-all flex items-center gap-1.5"
