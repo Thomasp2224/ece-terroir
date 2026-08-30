@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Video, Heart, Camera } from 'lucide-react';
+import { Video, Heart, Camera, ExternalLink } from 'lucide-react';
 import { useData } from '@/lib/context/DataContext';
 
 function InstagramIcon({ className = 'w-4 h-4' }: { className?: string }) {
@@ -13,6 +13,7 @@ function InstagramIcon({ className = 'w-4 h-4' }: { className?: string }) {
 }
 
 export function SocialLiveFeedWidget() {
+  const { socialPosts } = useData();
   const [likes, setLikes] = useState<{ [key: string]: number }>({});
 
   const handleLike = (id: string, initialLikes: number, e: React.MouseEvent) => {
@@ -23,35 +24,7 @@ export function SocialLiveFeedWidget() {
     }));
   };
 
-  const samplePhotos = [
-    {
-      id: 'photo-1',
-      title: 'Grand Banquet de Rentree',
-      caption: 'Raclette au feu de bois & convivialite au Foyer 🧀🍷',
-      image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=800&auto=format&fit=crop',
-      likes: 142,
-      platform: 'instagram',
-      author: '@ece_terroir'
-    },
-    {
-      id: 'photo-2',
-      title: 'Visite Vignerons en Bourgogne',
-      caption: 'Immersion dans les caves du Domaine & degustation des crus 🍇',
-      image: 'https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?q=80&w=800&auto=format&fit=crop',
-      likes: 98,
-      platform: 'instagram',
-      author: '@ece_terroir'
-    },
-    {
-      id: 'photo-3',
-      title: 'Concours de Decapsulage & Sommelerie',
-      caption: 'Nos etudiants aux commandes du couteau sommelier en olivier ✨',
-      image: 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=800&auto=format&fit=crop',
-      likes: 185,
-      platform: 'tiktok',
-      author: '@eceterroir_tiktok'
-    }
-  ];
+  const displayPosts = socialPosts.slice(0, 3);
 
   return (
     <div className="liquid-glass rounded-3xl p-5 sm:p-7 border border-white/90 shadow-xl relative overflow-hidden space-y-5">
@@ -70,58 +43,63 @@ export function SocialLiveFeedWidget() {
 
         <div className="flex items-center gap-2">
           <a
-            href="https://instagram.com"
+            href="https://www.instagram.com/eceterroir/"
             target="_blank"
             rel="noreferrer"
             className="p-2 rounded-2xl bg-white/80 hover:bg-white border border-[#EAE2D8] text-[#58111A] hover:scale-105 transition-all shadow-sm flex items-center gap-1.5 text-xs font-bold"
           >
             <InstagramIcon className="w-4 h-4 text-[#58111A]" />
-            <span className="hidden sm:inline">@ece_terroir</span>
+            <span>@eceterroir</span>
+            <ExternalLink className="w-3 h-3 text-[#78716C]" />
           </a>
         </div>
       </div>
 
       {/* 3 Polaroids in Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-2">
-        {samplePhotos.map((photo, idx) => {
-          const currentLikes = likes[photo.id] || photo.likes;
+        {displayPosts.map((photo, idx) => {
+          const currentLikes = likes[photo.id] || photo.likesCount || 0;
           const tiltClass = idx === 0 ? '-rotate-1 hover:rotate-0' : idx === 1 ? 'rotate-1 hover:rotate-0' : '-rotate-0.5 hover:rotate-0';
 
           return (
-            <div
+            <a
               key={photo.id}
-              className={`p-3 rounded-2xl bg-white border border-[#EAE2D8] shadow-md hover:shadow-2xl transition-all duration-300 transform ${tiltClass} flex flex-col justify-between space-y-3 cursor-pointer group`}
+              href={photo.postUrl}
+              target="_blank"
+              rel="noreferrer"
+              className={`p-3 rounded-2xl bg-white border border-[#EAE2D8] shadow-md hover:shadow-2xl transition-all duration-300 transform ${tiltClass} flex flex-col justify-between space-y-3 cursor-pointer group block text-left`}
             >
               {/* Photo Frame */}
               <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-[#FAF7F2]">
                 <img
-                  src={photo.image}
-                  alt={photo.title}
+                  src={photo.mediaUrl}
+                  alt={photo.content}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-[9px] font-bold flex items-center gap-1">
                   {photo.platform === 'instagram' ? <InstagramIcon className="w-2.5 h-2.5" /> : <Video className="w-2.5 h-2.5" />}
-                  {photo.author}
+                  {photo.handle}
                 </span>
               </div>
 
               {/* Caption & Like */}
               <div className="space-y-1.5 px-1">
                 <p className="text-xs font-medium text-[#1D1917] line-clamp-2 leading-relaxed">
-                  {photo.caption}
+                  {photo.content}
                 </p>
                 <div className="flex items-center justify-between pt-1 border-t border-[#F4EFEA] text-[11px] text-[#78716C]">
                   <button
-                    onClick={(e) => handleLike(photo.id, photo.likes, e)}
+                    type="button"
+                    onClick={(e) => handleLike(photo.id, photo.likesCount, e)}
                     className="flex items-center gap-1 text-[#58111A] hover:scale-110 transition-transform font-bold"
                   >
                     <Heart className="w-3.5 h-3.5 fill-[#58111A]" />
                     <span>{currentLikes}</span>
                   </button>
-                  <span className="text-[10px] text-[#A8A29E]">ECE Paris</span>
+                  <span className="text-[10px] text-[#A8A29E]">Campus Eiffel 1</span>
                 </div>
               </div>
-            </div>
+            </a>
           );
         })}
       </div>

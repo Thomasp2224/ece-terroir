@@ -62,16 +62,16 @@ export default function HomePage() {
             {/* Quick Metrics */}
             <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/10 max-w-lg">
               <div>
-                <span className="font-serif-title font-bold text-xl sm:text-2xl text-[#D4AF37]">85 kg</span>
-                <p className="text-[10px] text-[#A8A29E] uppercase tracking-wider">Raclette AOP / an</p>
+                <span className="font-serif-title font-bold text-xl sm:text-2xl text-[#D4AF37]">10 €</span>
+                <p className="text-[10px] text-[#A8A29E] uppercase tracking-wider">Adhésion Annuelle</p>
               </div>
               <div>
-                <span className="font-serif-title font-bold text-xl sm:text-2xl text-[#FAF7F2]">140+</span>
-                <p className="text-[10px] text-[#A8A29E] uppercase tracking-wider">Épicuriens Actifs</p>
+                <span className="font-serif-title font-bold text-xl sm:text-2xl text-[#FAF7F2]">2026-2027</span>
+                <p className="text-[10px] text-[#A8A29E] uppercase tracking-wider">Saison Universitaire</p>
               </div>
               <div>
                 <span className="font-serif-title font-bold text-xl sm:text-2xl text-[#D4AF37]">100%</span>
-                <p className="text-[10px] text-[#A8A29E] uppercase tracking-wider">Fait Maison & AOP</p>
+                <p className="text-[10px] text-[#A8A29E] uppercase tracking-wider">AOP & Artisanal</p>
               </div>
             </div>
 
