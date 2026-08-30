@@ -15,10 +15,8 @@ import {
   ShieldCheck, 
   AlertCircle, 
   CheckCircle2, 
-  Compass, 
   Award,
-  HelpCircle,
-  GraduationCap
+  Crown
 } from 'lucide-react';
 import { isEceEmail } from '@/lib/utils/auth-security';
 
@@ -43,22 +41,6 @@ export default function LoginPage() {
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const terroirsList = [
-    'Savoie & Alpages',
-    'Bourgogne & Grands Crus',
-    'Jura & Comté',
-    'Sud-Ouest & Salaisons',
-    'Normandie & Cidres',
-    'Alsace & Terroirs Rhénans',
-    'Auvergne & Cantal',
-  ];
-
-  const handleToggleTerroir = (t: string) => {
-    setSelectedTerroirs((prev) =>
-      prev.includes(t) ? prev.filter((item) => item !== t) : [...prev, t]
-    );
-  };
-
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -79,7 +61,7 @@ export default function LoginPage() {
         { name: email, email }
       );
       setTimeout(() => {
-        router.push(email.includes('jules') ? '/admin' : '/profil');
+        router.push(email.includes('jules') || email.includes('thomas') || email.includes('leonard') ? '/admin' : '/profil');
       }, 500);
     }
   };
@@ -127,18 +109,18 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickLogin = async (asType: 'admin' | 'member' | 'visitor') => {
+  const handleQuickLogin = async (asType: 'jules' | 'thomas' | 'leonard') => {
     setLoading(true);
     setError('');
-    if (asType === 'admin') {
+    if (asType === 'jules') {
       await login('jules.houry@edu.ece.fr', 'admin123');
       router.push('/admin');
-    } else if (asType === 'member') {
-      await login('leonard.brault@edu.ece.fr', 'ece2026');
-      router.push('/profil');
+    } else if (asType === 'thomas') {
+      await login('thomas.petit@edu.ece.fr', 'admin123');
+      router.push('/admin');
     } else {
-      await login('chloe.moreau@edu.ece.fr', 'ece2026');
-      router.push('/profil');
+      await login('leonard.brault@edu.ece.fr', 'admin123');
+      router.push('/admin');
     }
     setLoading(false);
   };
@@ -286,7 +268,7 @@ export default function LoginPage() {
                   required
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="ex: Thomas Petit"
+                  placeholder="ex: Alexandre Dumas"
                   className="w-full pl-9 pr-4 py-2 rounded-2xl bg-white border border-[#EAE2D8] focus:border-[#D4AF37] text-xs text-[#1D1917] placeholder-[#A8A29E] outline-none shadow-inner"
                 />
                 <User className="w-4 h-4 text-[#78716C] absolute left-3 top-2.5" />
@@ -304,7 +286,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="thomas.petit@edu.ece.fr"
+                  placeholder="alexandre.dumas@edu.ece.fr"
                   className="w-full pl-9 pr-4 py-2 rounded-2xl bg-white border border-[#EAE2D8] focus:border-[#D4AF37] text-xs text-[#1D1917] placeholder-[#A8A29E] outline-none shadow-inner"
                 />
                 <Mail className="w-4 h-4 text-[#78716C] absolute left-3 top-2.5" />
@@ -383,27 +365,35 @@ export default function LoginPage() {
           </form>
         )}
 
-        {/* Quick Demo Switcher for Preview / Collaborators */}
+        {/* Quick Access Bureau Admins */}
         <div className="pt-4 border-t border-[#EAE2D8] space-y-2 relative z-10">
           <span className="text-[10px] font-extrabold text-[#78716C] uppercase tracking-wider block text-center">
-            ⚡ Accès Rapide Démo Collaborateurs :
+            👑 Accès Rapide Bureau Administrateurs (1 clic) :
           </span>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
-              onClick={() => handleQuickLogin('admin')}
-              className="p-2.5 rounded-2xl bg-white border border-[#D4AF37]/50 hover:border-[#14281D] text-[11px] font-bold text-[#14281D] shadow-sm hover:shadow transition-all flex items-center justify-between group"
+              onClick={() => handleQuickLogin('jules')}
+              className="p-2 rounded-2xl bg-white border border-[#D4AF37]/50 hover:border-[#14281D] text-[10px] font-bold text-[#14281D] shadow-sm hover:shadow transition-all flex flex-col items-center justify-center text-center gap-0.5"
             >
-              <span>👑 Jules (Président)</span>
-              <ArrowRight className="w-3 h-3 text-[#D4AF37] group-hover:translate-x-0.5 transition-transform" />
+              <Crown className="w-3 h-3 text-[#D4AF37]" />
+              <span>Jules (Président)</span>
             </button>
             <button
               type="button"
-              onClick={() => handleQuickLogin('member')}
-              className="p-2.5 rounded-2xl bg-white border border-[#EAE2D8] hover:border-[#2D5A3F] text-[11px] font-bold text-[#2D5A3F] shadow-sm hover:shadow transition-all flex items-center justify-between group"
+              onClick={() => handleQuickLogin('thomas')}
+              className="p-2 rounded-2xl bg-white border border-[#D4AF37]/50 hover:border-[#14281D] text-[10px] font-bold text-[#14281D] shadow-sm hover:shadow transition-all flex flex-col items-center justify-center text-center gap-0.5"
             >
-              <span>🧀 Léonard (Membre)</span>
-              <ArrowRight className="w-3 h-3 text-[#D4AF37] group-hover:translate-x-0.5 transition-transform" />
+              <ShieldCheck className="w-3 h-3 text-[#D4AF37]" />
+              <span>Thomas (Tech)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('leonard')}
+              className="p-2 rounded-2xl bg-white border border-[#D4AF37]/50 hover:border-[#14281D] text-[10px] font-bold text-[#14281D] shadow-sm hover:shadow transition-all flex flex-col items-center justify-center text-center gap-0.5"
+            >
+              <Award className="w-3 h-3 text-[#D4AF37]" />
+              <span>Léonard (Bureau)</span>
             </button>
           </div>
         </div>
