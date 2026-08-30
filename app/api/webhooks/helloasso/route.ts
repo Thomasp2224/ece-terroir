@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase/client';
+import { sendMembershipEmail } from '@/lib/email/mailer';
 
 interface HelloAssoWebhookPayload {
   eventType: 'Order' | 'Payment' | 'Form';
@@ -51,43 +53,75 @@ export async function POST(req: NextRequest) {
     const promo =
       data.customFields?.promo ||
       data.order?.items?.[0]?.customFields?.promo ||
-      'Ingé (Campus Eiffel 1)';
+      'ING4 (Promo 2028)';
 
     // Generate unique member matricule
     const randMat = Math.floor(1000 + Math.random() * 9000);
     const matricule = `ECE-TERR-2026-${randMat}`;
+    const now = new Date().toISOString();
 
-    const memberData = {
-      id: `usr-helloasso-${Date.now()}`,
-      email,
-      fullName,
-      promo,
-      role: 'member' as const,
-      status: 'active' as const,
-      membershipStatus: 'active' as const,
-      membershipPaymentMethod: 'helloasso' as const,
-      matricule,
-      amountCents,
-      membershipApprovedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-    };
-
-    // Trigger internal welcome email dispatcher
-    let emailStatus = 'dispatched';
+    // 1. Mettre à jour / Créer le profil dans Supabase Cloud
     try {
-      const emailRes = await fetch(new URL('/api/send-membership-email', req.url).toString(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          member: memberData,
-          sendRealEmail: false, // will log or use Resend if key exists
-        }),
+      await supabase.from('profiles').upsert({
+        email,
+        full_name: fullName,
+        promo,
+        role: 'member',
+        status: 'active',
+        membership_status: 'active',
+        membership_payment_method: 'helloasso',
+        membership_approved_at: now,
+      }, { onConflict: 'email' });
+    } catch (dbErr) {
+      console.warn('Erreur Supabase profile update (webhook):', dbErr);
+    }
+
+    // 2. Enregistrer la demande validée dans membership_requests Supabase
+    try {
+      await supabase.from('membership_requests').insert({
+        id: `req-helloasso-${Date.now()}`,
+        user_id: `usr-${Date.now()}`,
+        user_name: fullName,
+        user_email: email,
+        user_promo: promo,
+        amount_cents: amountCents,
+        payment_method: 'helloasso',
+        status: 'approved',
+        requested_at: now,
+        reviewed_at: now,
+        reviewed_by: 'HelloAsso Webhook Automatique',
+        notes: `Paiement HelloAsso automatique validé (${(amountCents / 100).toFixed(2)} €).`,
       });
-      const emailResult = await emailRes.json();
-      emailStatus = emailResult.success ? 'sent' : 'simulated';
-    } catch (e) {
-      console.warn('Notification email error (webhook):', e);
-      emailStatus = 'simulation_logged';
+    } catch (dbErr) {
+      console.warn('Erreur Supabase membership_requests (webhook):', dbErr);
+    }
+
+    // 3. Journaliser dans admin_logs Supabase
+    try {
+      await supabase.from('admin_logs').insert({
+        id: `log-webhook-${Date.now()}`,
+        timestamp: now,
+        user_email: email,
+        user_name: fullName,
+        action: 'Paiement Webhook HelloAsso',
+        category: 'auth',
+        details: `Adhésion validée automatiquement pour ${fullName} (${email}). Matricule attribué : ${matricule}.`,
+      });
+    } catch (e) {}
+
+    // 4. Envoyer l'email officiel avec Pass Épicurien
+    let emailResult = { success: true, mode: 'simulated' };
+    try {
+      emailResult = await sendMembershipEmail({
+        fullName,
+        email,
+        promo,
+        matricule,
+        amountCents,
+        approvedAt: now,
+      });
+    } catch (mailErr) {
+      console.warn('Erreur envoi email webhook:', mailErr);
     }
 
     return NextResponse.json({
@@ -95,9 +129,8 @@ export async function POST(req: NextRequest) {
       message: `Paiement HelloAsso traité avec succès pour ${fullName}. Adhésion activée (${matricule}).`,
       eventType: eventType || 'Order',
       matricule,
-      member: memberData,
-      emailStatus,
-      processedAt: new Date().toISOString(),
+      emailStatus: emailResult.mode,
+      processedAt: now,
     });
   } catch (err: unknown) {
     console.error('Erreur traitement Webhook HelloAsso:', err);
@@ -112,7 +145,7 @@ export async function GET() {
   return NextResponse.json({
     service: 'ECE Terroir — HelloAsso Webhook Gateway',
     status: 'online',
-    version: '1.0.0',
+    version: '2.0.0',
     supportedEvents: ['Order', 'Payment', 'Form'],
     targetForm: 'Cotisation Adhésion ECE Terroir 2026-2027',
   });
