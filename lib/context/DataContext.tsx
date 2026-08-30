@@ -605,6 +605,28 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       'order',
       `Commande ${orderNumber} (${(newOrder.totalCents / 100).toFixed(2)} €) créée par ${newOrder.userName}.`
     );
+
+    // Déclencher l'envoi de l'email de confirmation de commande
+    try {
+      fetch('/api/send-order-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderNumber: newOrder.orderNumber,
+          userName: newOrder.userName,
+          userEmail: newOrder.userEmail,
+          items: newOrder.items.map((it) => ({
+            name: it.product?.name || 'Produit Terroir',
+            quantity: it.quantity,
+            priceCents: it.product?.priceCents || 0,
+            size: it.selectedSize,
+          })),
+          totalCents: newOrder.totalCents,
+          pickupLocation: 'Foyer des Élèves — Campus ECE Eiffel 1',
+        }),
+      }).catch((e) => console.warn('Erreur envoi email commande:', e));
+    } catch (e) {}
+
     return newOrder;
   };
 
@@ -819,7 +841,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       `Paiement de la cotisation (10,00 €) validé pour ${targetReq.userName} (${targetReq.userEmail}). Profil promu au statut Membre et synchronisé dans le fichier Excel du Google Drive (PÔLE TRÉSORERIE).`
     );
 
-    // 4. Synchronisation automatique de l'Excel sur le Google Drive officiel !
+    // 4. Déclencher l'envoi de l'email officiel avec Pass Épicurien
+    try {
+      fetch('/api/send-membership-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          member: {
+            fullName: targetReq.userName,
+            email: targetReq.userEmail,
+            promo: targetReq.userPromo || 'ING4 (Promo 2028)',
+            matricule: `ECE-TERR-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+            amountCents: targetReq.amountCents || 1000,
+            approvedAt: now,
+          },
+        }),
+      }).catch((e) => console.warn('Erreur envoi email adhésion:', e));
+    } catch (e) {}
+
+    // 5. Synchronisation automatique de l'Excel sur le Google Drive officiel !
     syncDriveExcel(updatedUsers, updatedRequests);
   };
 
