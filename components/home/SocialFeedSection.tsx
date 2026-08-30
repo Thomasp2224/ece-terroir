@@ -124,9 +124,9 @@ export default function SocialFeedSection() {
 
         {/* Social Feed Cards with TiltCard & Stagger */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((n) => (
-              <div key={n} className="h-80 rounded-3xl bg-white/5 border border-white/10 animate-pulse" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <div key={n} className="h-96 rounded-3xl bg-white/5 border border-white/10 animate-pulse" />
             ))}
           </div>
         ) : filteredPosts.length === 0 ? (
@@ -138,7 +138,7 @@ export default function SocialFeedSection() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredPosts.map((post, idx) => (
               <ScrollReveal key={post.id} direction="up" delay={idx * 0.1} className="flex">
                 <TiltCard
