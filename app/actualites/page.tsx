@@ -59,7 +59,16 @@ export default function ActualitesPage() {
         </ScrollReveal>
 
         {/* Articles Grid with TiltCard */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {filteredPosts.length === 0 ? (
+          <div className="text-center py-20 bg-[#FFFFFF] rounded-3xl border border-[#EAE2D8] p-8 space-y-4">
+            <Newspaper className="w-12 h-12 text-[#D8CCC0] mx-auto" />
+            <h3 className="font-serif-title font-bold text-xl text-[#58111A]">Gazette en cours de rédaction</h3>
+            <p className="text-sm text-[#78716C]">
+              Les récits de dégustations, chroniques gourmandes et actualités officielles de la Confrérie seront publiés prochainement.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {filteredPosts.map((post, idx) => (
             <ScrollReveal key={post.id} direction="up" delay={idx * 0.1} className="flex">
               <TiltCard maxTilt={5} className="w-full">
@@ -131,6 +140,7 @@ export default function ActualitesPage() {
             </ScrollReveal>
           ))}
         </div>
+        )}
       </div>
 
       {/* Social Feed Section */}

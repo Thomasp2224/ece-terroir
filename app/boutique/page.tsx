@@ -91,7 +91,16 @@ export default function BoutiquePage() {
         </ScrollReveal>
 
         {/* Product Grid with TiltCard */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        {filteredProducts.length === 0 ? (
+          <div className="text-center py-20 bg-[#FFFFFF] rounded-3xl border border-[#EAE2D8] p-8 space-y-4">
+            <ShoppingBag className="w-12 h-12 text-[#D8CCC0] mx-auto" />
+            <h3 className="font-serif-title font-bold text-xl text-[#58111A]">Échoppe en cours d&apos;approvisionnement</h3>
+            <p className="text-sm text-[#78716C]">
+              Les articles officiels de la saison (hoodies brodés, planches gravées et accessoires) seront bientôt disponibles à la commande.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredProducts.map((product, idx) => {
             const currentSize = product.sizes ? selectedSizes[product.id] || product.sizes[0] : null;
 
@@ -207,6 +216,7 @@ export default function BoutiquePage() {
             );
           })}
         </div>
+        )}
       </div>
 
       {/* Product Detail Modal */}

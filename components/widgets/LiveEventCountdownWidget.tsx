@@ -49,7 +49,30 @@ export function LiveEventCountdownWidget() {
     return () => clearInterval(interval);
   }, [nextEvent]);
 
-  if (!nextEvent) return null;
+  if (!nextEvent) {
+    return (
+      <div className="liquid-glass rounded-3xl p-5 sm:p-7 border border-white/90 shadow-xl relative overflow-hidden group w-full flex flex-col justify-between space-y-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#14281D] text-[#D4AF37] text-[11px] font-extrabold uppercase tracking-wider border border-[#D4AF37]/30 shadow-sm w-fit">
+          <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+          Saison 2026-2027 • En Préparation
+        </div>
+        <div className="space-y-2">
+          <h3 className="font-serif-title font-extrabold text-xl sm:text-2xl text-[#14281D]">
+            Prochains Banquets & Dégustations
+          </h3>
+          <p className="text-xs text-[#78716C] leading-relaxed">
+            Le Bureau ECE Terroir prépare actuellement le calendrier officiel des soirées et banquets au Foyer pour la rentrée.
+          </p>
+        </div>
+        <div className="pt-2">
+          <a href="/adhesion" className="inline-flex items-center gap-2 text-xs font-extrabold text-[#58111A] hover:underline">
+            <span>Prendre mon Pass Épicurien (10€)</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   const spotsLeft = nextEvent.remainingSeats ?? 0;
   const currentAttendees = nextEvent.capacity - nextEvent.remainingSeats;

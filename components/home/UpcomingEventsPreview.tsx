@@ -44,8 +44,18 @@ export default function UpcomingEventsPreview() {
       </div>
 
       {/* Bento Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
+      {allEvents.length === 0 ? (
+        <div className="text-center py-12 rounded-3xl liquid-glass border border-[#EAE2D8] p-8 space-y-3">
+          <Calendar className="w-10 h-10 text-[#D4AF37] mx-auto" />
+          <h3 className="font-serif-title font-bold text-xl text-[#14281D]">
+            Programmation des festins en cours de finalisation
+          </h3>
+          <p className="text-xs sm:text-sm text-[#78716C] max-w-md mx-auto">
+            Les dates des dégustations de fromages, ateliers et week-ends terroir seront publiées très prochainement ici et sur nos réseaux.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* 1. Featured Event Card */}
         {featuredEvent && (
           <div
@@ -166,6 +176,7 @@ export default function UpcomingEventsPreview() {
         </div>
 
       </div>
+      )}
 
       {/* Event Modal */}
       {selectedEvent && (

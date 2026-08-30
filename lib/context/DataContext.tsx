@@ -69,15 +69,15 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  EVENTS: 'ece_terroir_events_v2',
-  POSTS: 'ece_terroir_posts_v2',
-  PRODUCTS: 'ece_terroir_products_v2',
-  ORDERS: 'ece_terroir_orders_v2',
-  USERS: 'ece_terroir_users_v2',
-  LOGS: 'ece_terroir_logs_v2',
-  SOCIAL_POSTS: 'ece_terroir_social_posts_v2',
-  MEMBERSHIPS: 'ece_terroir_memberships_v2',
-  CHECK_INS: 'ece_terroir_checkins_v2',
+  EVENTS: 'ece_terroir_events_v3',
+  POSTS: 'ece_terroir_posts_v3',
+  PRODUCTS: 'ece_terroir_products_v3',
+  ORDERS: 'ece_terroir_orders_v3',
+  USERS: 'ece_terroir_users_v3',
+  LOGS: 'ece_terroir_logs_v3',
+  SOCIAL_POSTS: 'ece_terroir_social_posts_v3',
+  MEMBERSHIPS: 'ece_terroir_memberships_v3',
+  CHECK_INS: 'ece_terroir_checkins_v3',
 };
 
 import { supabase } from '@/lib/supabase/client';
@@ -169,7 +169,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // 3. Événements
         const { data: dbEvents } = await supabase.from('events').select('*').order('start_date', { ascending: true });
-        if (dbEvents && dbEvents.length > 0) {
+        if (dbEvents !== null) {
           const mappedEvents: EventItem[] = dbEvents.map((e) => ({
             id: e.id,
             title: e.title,
@@ -196,7 +196,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // 4. Produits Boutique
         const { data: dbProducts } = await supabase.from('products').select('*');
-        if (dbProducts && dbProducts.length > 0) {
+        if (dbProducts !== null) {
           const mappedProducts: MerchProduct[] = dbProducts.map((p) => ({
             id: p.id,
             name: p.name,
@@ -223,7 +223,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // 5. Articles Gazette
         const { data: dbPosts } = await supabase.from('posts').select('*').order('published_at', { ascending: false });
-        if (dbPosts && dbPosts.length > 0) {
+        if (dbPosts !== null) {
           const mappedPosts: BlogPost[] = dbPosts.map((p) => ({
             id: p.id,
             title: p.title,
@@ -249,7 +249,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // 6. Scans / Checkins
         const { data: dbCheckins } = await supabase.from('event_checkins').select('*').order('checked_in_at', { ascending: false });
-        if (dbCheckins && dbCheckins.length > 0) {
+        if (dbCheckins !== null) {
           const mappedCheckins: CheckInRecord[] = dbCheckins.map((c) => ({
             id: c.id,
             eventId: c.event_id,

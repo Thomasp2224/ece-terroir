@@ -55,7 +55,13 @@ export function MerchLiquidShowcase() {
         </div>
 
         {/* 3 Grid Showcase Items */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {featuredProducts.length === 0 ? (
+          <div className="text-center py-8 rounded-2xl bg-white/60 border border-[#EAE2D8] p-6 space-y-2">
+            <p className="font-serif-title font-bold text-base text-[#14281D]">Échoppe en cours de réapprovisionnement</p>
+            <p className="text-xs text-[#78716C]">Les créations textiles brodées, planches en chêne et accessoires arrivent très prochainement pour la rentrée.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {featuredProducts.map((product) => {
             const memberPriceCents = Math.round(product.priceCents * 0.85);
             const displayPriceCents = isMemberActive ? memberPriceCents : product.priceCents;
@@ -125,6 +131,7 @@ export function MerchLiquidShowcase() {
             );
           })}
         </div>
+        )}
 
         {/* Mobile Full Link */}
         <div className="sm:hidden pt-1 text-center">
