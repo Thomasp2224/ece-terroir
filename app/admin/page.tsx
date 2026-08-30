@@ -198,6 +198,8 @@ export default function AdminDashboardPage() {
   const [newSocialLikes, setNewSocialLikes] = useState('250');
   const [newSocialComments, setNewSocialComments] = useState('18');
   const [newSocialUrl, setNewSocialUrl] = useState('https://www.instagram.com/eceterroir/');
+  const [tiktokImportUrl, setTiktokImportUrl] = useState('');
+  const [isImportingTiktok, setIsImportingTiktok] = useState(false);
 
   // Search & filters
   const [userSearch, setUserSearch] = useState('');
@@ -506,7 +508,32 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // --- Handlers for Social Posts ---
+  // --- Handlers for Social Posts & TikTok Import ---
+  const handleImportTiktok = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tiktokImportUrl.trim()) return;
+    setIsImportingTiktok(true);
+    try {
+      const res = await fetch('/api/tiktok/oembed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: tiktokImportUrl.trim() }),
+      });
+      const data = await res.json();
+      if (data.success && data.post) {
+        addSocialPost(data.post);
+        setTiktokImportUrl('');
+        triggerSuccess(`Vidéo TikTok importée avec succès !`);
+      } else {
+        alert(data.error || 'Erreur lors de la récupération de la vidéo TikTok.');
+      }
+    } catch (err: any) {
+      alert(`Erreur réseau: ${err.message}`);
+    } finally {
+      setIsImportingTiktok(false);
+    }
+  };
+
   const handleCreateSocial = (e: React.FormEvent) => {
     e.preventDefault();
     const isInsta = newSocialPlatform === 'instagram';
@@ -1394,11 +1421,48 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
+            {/* 1-Click TikTok Auto-Importer */}
+            <div className="bg-[#14281D] p-6 sm:p-7 rounded-3xl border border-[#D4AF37]/50 shadow-xl space-y-4 text-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#58111A] text-[#D4AF37] text-[10px] font-extrabold uppercase tracking-wider border border-[#D4AF37]/40 shadow-sm">
+                    <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+                    <span>Import TikTok 1-Clic</span>
+                  </div>
+                  <h3 className="font-serif-title font-extrabold text-xl text-[#FAF7F2]">
+                    Importer une vidéo TikTok (@ece.terroir)
+                  </h3>
+                  <p className="text-xs text-[#D8CCC0]">
+                    Collez le lien public de votre vidéo TikTok (ex: <code className="text-[#D4AF37]">https://www.tiktok.com/@ece.terroir/video/...</code>). Le site récupère automatiquement la photo de couverture HD, le titre et l&apos;ajoute au flux !
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleImportTiktok} className="flex flex-col sm:flex-row gap-3 pt-2">
+                <input
+                  type="url"
+                  required
+                  placeholder="https://www.tiktok.com/@ece.terroir/video/..."
+                  value={tiktokImportUrl}
+                  onChange={(e) => setTiktokImportUrl(e.target.value)}
+                  className="flex-1 px-4 py-3 text-xs rounded-2xl bg-white/10 border border-[#D4AF37]/40 text-[#FAF7F2] placeholder:text-[#A8A29E] focus:outline-none focus:border-[#D4AF37]"
+                />
+                <button
+                  type="submit"
+                  disabled={isImportingTiktok}
+                  className="px-6 py-3 rounded-2xl bg-[#D4AF37] hover:bg-amber-300 text-[#14281D] font-extrabold text-xs shadow-lg transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 hover:scale-105"
+                >
+                  <RotateCcw className={`w-4 h-4 ${isImportingTiktok ? 'animate-spin' : ''}`} />
+                  <span>{isImportingTiktok ? 'Import en cours...' : '⚡ Importer TikTok'}</span>
+                </button>
+              </form>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Form to add social post */}
               <div className="lg:col-span-1 bg-[#FFFFFF] p-6 rounded-3xl border border-[#EAE2D8] shadow-sm space-y-4">
                 <h3 className="font-serif-title font-bold text-xl text-[#58111A] flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-[#D4AF37]" /> Ajouter une Publication Réseaux
+                  <Plus className="w-5 h-5 text-[#D4AF37]" /> Ajouter Manuellement une Publication
                 </h3>
                 <form onSubmit={handleCreateSocial} className="space-y-3.5 text-xs">
                   <div>
