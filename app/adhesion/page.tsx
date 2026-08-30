@@ -36,7 +36,7 @@ export default function AdhesionPage() {
   // Registration for non-logged-in visitors
   const [visitorName, setVisitorName] = useState('');
   const [visitorEmail, setVisitorEmail] = useState('');
-  const [visitorPromo, setVisitorPromo] = useState('Ingé 2 (Promo 2028)');
+  const [visitorPromo, setVisitorPromo] = useState('ING4 (Promo 2028)');
 
   // Payment form state
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodMembership>('helloasso');
@@ -493,7 +493,7 @@ export default function AdhesionPage() {
                     <input
                       type="text"
                       required
-                      placeholder="Ex: Ingé 2 (Promo 2028)"
+                      placeholder="Ex: ING4 (Promo 2028)"
                       value={visitorPromo}
                       onChange={(e) => setVisitorPromo(e.target.value)}
                       className="w-full px-3 py-2 rounded-xl bg-[#F6F1EA] border border-[#EAE2D8] focus:outline-none focus:border-[#58111A]"

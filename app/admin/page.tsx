@@ -144,7 +144,7 @@ export default function AdminDashboardPage() {
   // Webhook & Email Simulator states
   const [webhookSimName, setWebhookSimName] = useState('Alexandre Dumas');
   const [webhookSimEmail, setWebhookSimEmail] = useState('alexandre.dumas@edu.ece.fr');
-  const [webhookSimPromo, setWebhookSimPromo] = useState('Ingé 3 (Promo 2027)');
+  const [webhookSimPromo, setWebhookSimPromo] = useState('ING4 (Promo 2028)');
   const [webhookSimAmount, setWebhookSimAmount] = useState('10.00');
   const [isSimulatingWebhook, setIsSimulatingWebhook] = useState(false);
   const [webhookLogs, setWebhookLogs] = useState<Array<{ id: string; timestamp: string; status: 'success' | 'error'; message: string; matricule?: string; member?: any }>>([
@@ -187,7 +187,7 @@ export default function AdminDashboardPage() {
 
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserPromo, setNewUserPromo] = useState('Ingé 2 (Promo 2028)');
+  const [newUserPromo, setNewUserPromo] = useState('ING4 (Promo 2028)');
   const [newUserRole, setNewUserRole] = useState<UserRole>('member');
 
   // Social form state
@@ -2434,11 +2434,11 @@ export default function AdminDashboardPage() {
                         onChange={(e) => setWebhookSimPromo(e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl bg-[#F6F1EA] border border-[#EAE2D8] text-[#1D1917] font-semibold"
                       >
-                        <option value="Ingé 1 (Promo 2029)">Ingé 1 (Promo 2029)</option>
-                        <option value="Ingé 2 (Promo 2028)">Ingé 2 (Promo 2028)</option>
-                        <option value="Ingé 3 (Promo 2027)">Ingé 3 (Promo 2027)</option>
-                        <option value="Ingé 4 (Promo 2026)">Ingé 4 (Promo 2026)</option>
-                        <option value="Ingé 5 (Promo 2025)">Ingé 5 (Promo 2025)</option>
+                        <option value="ING1 (Promo 2031)">ING1 (Promo 2031)</option>
+                        <option value="ING2 (Promo 2030)">ING2 (Promo 2030)</option>
+                        <option value="ING3 (Promo 2029)">ING3 (Promo 2029)</option>
+                        <option value="ING4 (Promo 2028)">ING4 (Promo 2028)</option>
+                        <option value="ING5 (Promo 2027)">ING5 (Promo 2027)</option>
                         <option value="Bachelor ECE">Bachelor ECE</option>
                         <option value="Alumni ECE Paris">Alumni ECE Paris</option>
                       </select>

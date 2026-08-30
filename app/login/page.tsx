@@ -33,7 +33,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [promo, setPromo] = useState('ING3 (Promo 2027)');
+  const [promo, setPromo] = useState('ING4 (Promo 2028)');
   const [selectedTerroirs, setSelectedTerroirs] = useState<string[]>(['Savoie', 'Bourgogne']);
 
   // Feedback states
@@ -333,12 +333,12 @@ export default function LoginPage() {
                 onChange={(e) => setPromo(e.target.value)}
                 className="w-full px-3 py-2 rounded-2xl bg-white border border-[#EAE2D8] focus:border-[#D4AF37] text-xs text-[#1D1917] outline-none shadow-inner"
               >
-                <option value="ING1 (Promo 2029)">ING1 (Promo 2029)</option>
-                <option value="ING2 (Promo 2028)">ING2 (Promo 2028)</option>
-                <option value="ING3 (Promo 2027)">ING3 (Promo 2027)</option>
-                <option value="ING4 (Promo 2026)">ING4 (Promo 2026)</option>
-                <option value="ING5 (Promo 2025)">ING5 (Promo 2025)</option>
-                <option value="Alumni ECE">Alumni ECE Paris</option>
+                <option value="ING1 (Promo 2031)">ING1 (Promo 2031)</option>
+                <option value="ING2 (Promo 2030)">ING2 (Promo 2030)</option>
+                <option value="ING3 (Promo 2029)">ING3 (Promo 2029)</option>
+                <option value="ING4 (Promo 2028)">ING4 (Promo 2028)</option>
+                <option value="ING5 (Promo 2027)">ING5 (Promo 2027)</option>
+                <option value="Alumni ECE Paris">Alumni ECE Paris</option>
                 <option value="Enseignant / Staff ECE">Enseignant / Staff ECE</option>
               </select>
             </div>

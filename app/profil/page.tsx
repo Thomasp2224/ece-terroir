@@ -50,7 +50,7 @@ export default function ProfilPage() {
   // Edit profile modal state
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(user?.fullName || '');
-  const [promo, setPromo] = useState(user?.promo || 'Ingé 3 (Promo 2027)');
+  const [promo, setPromo] = useState(user?.promo || 'ING4 (Promo 2028)');
   const [bio, setBio] = useState(user?.bio || 'Étudiant épicurien de l\'ECE Paris.');
   const [favoriteTerroirs, setFavoriteTerroirs] = useState(
     user?.favoriteTerroirs?.join(', ') || 'Bourgogne, Jura, Savoie'
@@ -229,7 +229,7 @@ export default function ProfilPage() {
             <button
               onClick={() => {
                 setFullName(user.fullName);
-                setPromo(user.promo || 'Ingé 3 (Promo 2027)');
+                setPromo(user.promo || 'ING4 (Promo 2028)');
                 setBio(user.bio || '');
                 setFavoriteTerroirs(user.favoriteTerroirs?.join(', ') || '');
                 setIsEditing(true);
@@ -567,7 +567,7 @@ export default function ProfilPage() {
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Ingé 3 (Promo 2027)"
+                  placeholder="Ex: ING4 (Promo 2028)"
                   value={promo}
                   onChange={(e) => setPromo(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl bg-[#F6F1EA] border border-[#EAE2D8] focus:outline-none focus:border-[#58111A]"

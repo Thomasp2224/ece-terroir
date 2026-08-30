@@ -80,6 +80,8 @@ const STORAGE_KEYS = {
   CHECK_INS: 'ece_terroir_checkins_v2',
 };
 
+import { supabase } from '@/lib/supabase/client';
+
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [events, setEvents] = useState<EventItem[]>(MOCK_EVENTS);
   const [posts, setPosts] = useState<BlogPost[]>(MOCK_POSTS);
@@ -91,7 +93,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [checkIns, setCheckIns] = useState<CheckInRecord[]>(MOCK_CHECK_INS);
   const [orders, setOrders] = useState<MerchOrder[]>(MOCK_ORDERS);
 
-  // Load from localStorage on mount with safe fallback
+  // Load from localStorage on mount with safe fallback + fetch live Supabase data
   useEffect(() => {
     try {
       const loadArray = <T,>(key: string, fallback: T[]): T[] => {
@@ -118,6 +120,56 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.warn('Erreur lors du chargement des données depuis localStorage', e);
     }
+
+    // Charger les profils et requêtes réels depuis Supabase Cloud
+    const fetchSupabaseLive = async () => {
+      try {
+        const { data: profiles } = await supabase.from('profiles').select('*');
+        if (profiles && profiles.length > 0) {
+          const mappedProfiles: UserProfile[] = profiles.map((p) => ({
+            id: p.id,
+            email: p.email,
+            fullName: p.full_name,
+            promo: p.promo,
+            role: p.role,
+            status: p.status,
+            membershipStatus: p.membership_status,
+            bio: p.bio,
+            favoriteTerroirs: p.favorite_terroirs || [],
+            createdAt: p.created_at,
+            lastLogin: p.updated_at || p.created_at,
+          }));
+          setUsers(mappedProfiles);
+          try {
+            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(mappedProfiles));
+          } catch (e) {}
+        }
+
+        const { data: reqs } = await supabase.from('membership_requests').select('*');
+        if (reqs && reqs.length > 0) {
+          const mappedReqs: MembershipRequest[] = reqs.map((r) => ({
+            id: r.id,
+            userId: r.user_id,
+            userName: r.user_name,
+            userEmail: r.user_email,
+            userPromo: r.user_promo,
+            amountCents: r.amount_cents,
+            paymentMethod: r.payment_method,
+            status: r.status,
+            requestedAt: r.requested_at,
+            notes: r.notes,
+          }));
+          setMembershipRequests(mappedReqs);
+          try {
+            localStorage.setItem(STORAGE_KEYS.MEMBERSHIPS, JSON.stringify(mappedReqs));
+          } catch (e) {}
+        }
+      } catch (err) {
+        console.warn('Supabase fetch error:', err);
+      }
+    };
+
+    fetchSupabaseLive();
   }, []);
 
   // Helpers to persist in localStorage
