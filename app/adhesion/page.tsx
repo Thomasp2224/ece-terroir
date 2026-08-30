@@ -30,7 +30,7 @@ import TiltCard from '@/components/ui/TiltCard';
 
 export default function AdhesionPage() {
   const router = useRouter();
-  const { user, login } = useAuth();
+  const { user, login, signup } = useAuth();
   const { requestMembership, membershipRequests } = useData();
 
   // Registration for non-logged-in visitors
@@ -86,11 +86,19 @@ export default function AdhesionPage() {
     setErrorMessage('');
     setIsSubmitting(true);
 
-    const loginRes = await login(visitorEmail, visitorName, 'visitor', visitorPromo);
-    if (!loginRes.success) {
-      setErrorMessage(loginRes.error || 'Erreur lors de la création de compte.');
-      setIsSubmitting(false);
-      return;
+    const signupRes = await signup({
+      email: visitorEmail,
+      password: 'ece2026_auto_adhesion',
+      fullName: visitorName,
+      promo: visitorPromo,
+    });
+    if (!signupRes.success) {
+      const loginRes = await login(visitorEmail);
+      if (!loginRes.success) {
+        setErrorMessage(signupRes.error || loginRes.error || 'Erreur lors de la création de compte.');
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     // Now user is registered as visitor, submit the membership request

@@ -6,243 +6,408 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/context/AuthContext';
 import { useData } from '@/lib/context/DataContext';
-import { UserRole } from '@/lib/types';
-import { Mail, Lock, ArrowRight, ShieldCheck, Sparkles, AlertCircle, User, Clock } from 'lucide-react';
+import { 
+  Mail, 
+  Lock, 
+  User, 
+  ArrowRight, 
+  Sparkles, 
+  ShieldCheck, 
+  AlertCircle, 
+  CheckCircle2, 
+  Compass, 
+  Award,
+  HelpCircle,
+  GraduationCap
+} from 'lucide-react';
+import { isEceEmail } from '@/lib/utils/auth-security';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, user } = useAuth();
+  const { login, signup, user } = useAuth();
   const { addAdminLog } = useData();
+
+  // Mode : 'login' ou 'signup'
+  const [tab, setTab] = useState<'login' | 'signup'>('login');
+
+  // Form Fields
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState<UserRole>('visitor');
+  const [promo, setPromo] = useState('ING3 (Promo 2027)');
+  const [selectedTerroirs, setSelectedTerroirs] = useState<string[]>(['Savoie', 'Bourgogne']);
+
+  // Feedback states
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const terroirsList = [
+    'Savoie & Alpages',
+    'Bourgogne & Grands Crus',
+    'Jura & Comté',
+    'Sud-Ouest & Salaisons',
+    'Normandie & Cidres',
+    'Alsace & Terroirs Rhénans',
+    'Auvergne & Cantal',
+  ];
+
+  const handleToggleTerroir = (t: string) => {
+    setSelectedTerroirs((prev) =>
+      prev.includes(t) ? prev.filter((item) => item !== t) : [...prev, t]
+    );
+  };
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMsg('');
     setLoading(true);
 
-    const result = await login(email, fullName || (role === 'visitor' ? 'Visiteur' : 'Étudiant ECE'), role);
+    const result = await login(email, password);
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error || 'Une erreur est survenue.');
+      setError(result.error || 'Erreur lors de la connexion.');
     } else {
+      setSuccessMsg('Connexion réussie ! Redirection...');
       addAdminLog(
-        role === 'admin' ? 'Connexion Admin' : role === 'member' ? 'Connexion Membre' : 'Connexion Visiteur',
+        'Connexion Utilisateur',
         'auth',
-        `Connexion réussie pour ${fullName || email} avec le rôle ${role}.`,
-        { name: fullName || email, email }
+        `Connexion de l'étudiant ${email}.`,
+        { name: email, email }
       );
-      router.push(role === 'admin' ? '/admin' : '/profil');
+      setTimeout(() => {
+        router.push(email.includes('jules') ? '/admin' : '/profil');
+      }, 500);
     }
   };
 
-  const handleQuickLogin = async (asType: 'admin' | 'member' | 'visitor' | 'pending_visitor') => {
+  const handleSignupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    if (password !== confirmPassword) {
+      setError('Les mots de passe ne correspondent pas.');
+      return;
+    }
+
+    if (!isEceEmail(email)) {
+      setError('Vous devez utiliser votre adresse étudiante officielle ECE Paris (@edu.ece.fr ou @ece.fr).');
+      return;
+    }
+
     setLoading(true);
-    if (asType === 'admin') {
-      await login('jules.houry@edu.ece.fr', 'Jules Houry (Président)', 'admin', 'Ingé 4 (Promo 2028)');
+
+    const result = await signup({
+      email,
+      password,
+      fullName,
+      promo,
+      favoriteTerroirs: selectedTerroirs,
+    });
+
+    setLoading(false);
+
+    if (!result.success) {
+      setError(result.error || 'Une erreur est survenue lors de la création du compte.');
+    } else {
+      setSuccessMsg('Compte étudiant créé avec succès ! Vous êtes connecté en tant que Visiteur.');
       addAdminLog(
-        'Connexion Rapide Admin',
+        'Création de Compte Étudiant',
         'auth',
-        'Connexion du Président Jules Houry au Dashboard d\'administration.',
-        { name: 'Jules Houry (Président)', email: 'jules.houry@edu.ece.fr' }
+        `Nouvel étudiant inscrit : ${fullName} (${email}, promo ${promo}). Statut initial : Visiteur.`,
+        { name: fullName, email }
       );
+      setTimeout(() => {
+        router.push('/adhesion');
+      }, 1000);
+    }
+  };
+
+  const handleQuickLogin = async (asType: 'admin' | 'member' | 'visitor') => {
+    setLoading(true);
+    setError('');
+    if (asType === 'admin') {
+      await login('jules.houry@edu.ece.fr', 'admin123');
       router.push('/admin');
     } else if (asType === 'member') {
-      await login('leonard.brault@edu.ece.fr', 'Léonard Brault', 'member', 'Ingé 4 (Promo 2028)');
-      addAdminLog(
-        'Connexion Rapide Membre',
-        'auth',
-        'Connexion membre de Léonard Brault.',
-        { name: 'Léonard Brault', email: 'leonard.brault@edu.ece.fr' }
-      );
-      router.push('/profil');
-    } else if (asType === 'pending_visitor') {
-      await login('maxime.lefebvre@edu.ece.fr', 'Maxime Lefebvre', 'visitor', 'Ingé 2 (Promo 2028)');
-      addAdminLog(
-        'Connexion Visiteur Cotisation en Attente',
-        'auth',
-        'Connexion de Maxime Lefebvre (demande d\'adhésion en cours).',
-        { name: 'Maxime Lefebvre', email: 'maxime.lefebvre@edu.ece.fr' }
-      );
+      await login('leonard.brault@edu.ece.fr', 'ece2026');
       router.push('/profil');
     } else {
-      await login('chloe.moreau@edu.ece.fr', 'Chloé Moreau', 'visitor', 'Ingé 1 (Promo 2029)');
-      addAdminLog(
-        'Connexion Visiteur Non-Membre',
-        'auth',
-        'Connexion visiteur de Chloé Moreau.',
-        { name: 'Chloé Moreau', email: 'chloe.moreau@edu.ece.fr' }
-      );
+      await login('chloe.moreau@edu.ece.fr', 'ece2026');
       router.push('/profil');
     }
     setLoading(false);
   };
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#FDFBF7]">
-      <div className="max-w-md w-full space-y-8 bg-[#FFFFFF] p-8 sm:p-10 rounded-3xl border border-[#EAE2D8] shadow-xl">
+    <div className="min-h-[85vh] flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-6 liquid-glass p-6 sm:p-9 rounded-3xl border border-white/90 shadow-2xl relative overflow-hidden bg-white/80">
+        
+        {/* Top Radial Glow */}
+        <div className="absolute top-0 right-0 w-36 h-36 bg-[#D4AF37]/15 rounded-full blur-2xl pointer-events-none" />
+
         {/* Header */}
-        <div className="text-center space-y-4">
-          <div className="relative w-28 sm:w-32 mx-auto flex items-center justify-center">
-            <img
-              src="/logo_eceterroir.png"
-              alt="Logo ECE Terroir"
-              className="w-full h-auto object-contain filter drop-shadow-md"
+        <div className="text-center space-y-3 relative z-10">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-[#14281D] to-[#264E3A] p-2.5 flex items-center justify-center border border-[#D4AF37]/40 shadow-md">
+            <Image
+              src="/logo.png"
+              alt="ECE Terroir"
+              width={42}
+              height={42}
+              className="object-contain filter brightness-110"
             />
           </div>
-          <h2 className="font-serif-title font-extrabold text-2xl sm:text-3xl text-[#58111A]">
-            Espace Compte ECE Terroir
-          </h2>
-          <p className="text-xs text-[#78716C]">
-            Connectez-vous ou créez votre profil pour accéder aux événements, à la boutique et à votre adhésion.
-          </p>
-        </div>
-
-        {/* Adhesion Promotion Banner */}
-        <div className="p-3.5 rounded-2xl bg-[#58111A]/5 border border-[#58111A]/20 flex items-center justify-between text-xs text-[#58111A]">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
-            <span>Pas encore adhérent ?</span>
+          <div className="space-y-1">
+            <h1 className="font-serif-title font-extrabold text-2xl sm:text-3xl text-[#14281D]">
+              Espace Compte Étudiant
+            </h1>
+            <p className="text-xs text-[#78716C]">
+              Association Gastronomique • Campus ECE Paris
+            </p>
           </div>
-          <Link href="/adhesion" className="font-bold underline hover:text-[#722F37]">
-            Prendre ma cotisation (10€) &rarr;
-          </Link>
         </div>
 
-        {/* Error alert */}
+        {/* 2-Tabs Selector */}
+        <div className="grid grid-cols-2 p-1 rounded-2xl bg-[#F3EDE2] border border-[#EAE2D8] text-xs font-bold relative z-10">
+          <button
+            type="button"
+            onClick={() => {
+              setTab('login');
+              setError('');
+              setSuccessMsg('');
+            }}
+            className={`py-2.5 rounded-xl transition-all ${
+              tab === 'login'
+                ? 'bg-[#14281D] text-[#FAF7F2] shadow-md'
+                : 'text-[#78716C] hover:text-[#14281D]'
+            }`}
+          >
+            Se Connecter
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setTab('signup');
+              setError('');
+              setSuccessMsg('');
+            }}
+            className={`py-2.5 rounded-xl transition-all ${
+              tab === 'signup'
+                ? 'bg-[#14281D] text-[#FAF7F2] shadow-md'
+                : 'text-[#78716C] hover:text-[#14281D]'
+            }`}
+          >
+            Créer un Compte
+          </button>
+        </div>
+
+        {/* Error / Success Alerts */}
         {error && (
-          <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
+          <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2 animate-in fade-in">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-[#78716C] mb-1.5">
-              Nom complet :
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="Ex: Maxime Lefebvre"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-4 py-2.5 text-xs rounded-xl bg-[#F6F1EA] border border-[#EAE2D8] focus:outline-none focus:border-[#58111A]"
-            />
+        {successMsg && (
+          <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
+            <span>{successMsg}</span>
           </div>
+        )}
 
-          <div>
-            <label className="block text-xs font-bold text-[#78716C] mb-1.5">
-              Adresse Email :
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-[#78716C] absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="email"
-                required
-                placeholder="prenom.nom@edu.ece.fr"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl bg-[#F6F1EA] border border-[#EAE2D8] focus:outline-none focus:border-[#58111A]"
-              />
+        {/* TAB 1 : CONNEXION */}
+        {tab === 'login' && (
+          <form onSubmit={handleLoginSubmit} className="space-y-4 relative z-10">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[#14281D] block">
+                Adresse Email Étudiante ECE Paris
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="prenom.nom@edu.ece.fr"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white border border-[#EAE2D8] focus:border-[#D4AF37] text-xs text-[#1D1917] placeholder-[#A8A29E] outline-none shadow-inner"
+                />
+                <Mail className="w-4 h-4 text-[#78716C] absolute left-3 top-3" />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs font-bold text-[#78716C] mb-1.5">
-              Type de profil / Rôle :
-            </label>
-            <div className="grid grid-cols-3 gap-1.5">
-              <button
-                type="button"
-                onClick={() => setRole('visitor')}
-                className={`py-2 px-2 rounded-xl border text-[11px] font-bold transition-all ${
-                  role === 'visitor'
-                    ? 'border-[#58111A] bg-[#58111A] text-[#FDFBF7]'
-                    : 'border-[#EAE2D8] bg-[#F6F1EA] text-[#78716C]'
-                }`}
-              >
-                👤 Visiteur
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('member')}
-                className={`py-2 px-2 rounded-xl border text-[11px] font-bold transition-all ${
-                  role === 'member'
-                    ? 'border-[#58111A] bg-[#58111A] text-[#FDFBF7]'
-                    : 'border-[#EAE2D8] bg-[#F6F1EA] text-[#78716C]'
-                }`}
-              >
-                🍷 Membre
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('admin')}
-                className={`py-2 px-2 rounded-xl border text-[11px] font-bold transition-all ${
-                  role === 'admin'
-                    ? 'border-[#58111A] bg-[#58111A] text-[#FDFBF7]'
-                    : 'border-[#EAE2D8] bg-[#F6F1EA] text-[#78716C]'
-                }`}
-              >
-                🛡️ Admin
-              </button>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-bold text-[#14281D] block">
+                  Mot de Passe
+                </label>
+                <span className="text-[10px] text-[#78716C]">Min. 6 caractères</span>
+              </div>
+              <div className="relative">
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white border border-[#EAE2D8] focus:border-[#D4AF37] text-xs text-[#1D1917] placeholder-[#A8A29E] outline-none shadow-inner"
+                />
+                <Lock className="w-4 h-4 text-[#78716C] absolute left-3 top-3" />
+              </div>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 px-6 rounded-xl bg-[#58111A] text-[#FDFBF7] font-semibold text-xs hover:bg-[#722F37] transition-all shadow-md flex items-center justify-center gap-2 border border-[#D4AF37]/30"
-          >
-            <span>{loading ? 'Connexion en cours...' : 'Accéder à mon Espace'}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 px-4 rounded-2xl skeuo-btn-pine text-xs font-extrabold flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition-all"
+            >
+              <span>{loading ? 'Connexion en cours...' : 'Se Connecter à mon Compte'}</span>
+              <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
+            </button>
+          </form>
+        )}
 
-        {/* Quick Demo Access Bar */}
-        <div className="pt-4 border-t border-[#EAE2D8] space-y-3 text-center">
-          <p className="text-[11px] font-bold text-[#78716C] uppercase tracking-wider">
-            ⚡ Accès Rapides Démo (Tester les rôles)
-          </p>
+        {/* TAB 2 : CRÉATION DE COMPTE (SIGN UP) */}
+        {tab === 'signup' && (
+          <form onSubmit={handleSignupSubmit} className="space-y-3.5 relative z-10">
+            
+            {/* Nom complet */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[#14281D] block">
+                Nom & Prénom
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="ex: Thomas Petit"
+                  className="w-full pl-9 pr-4 py-2 rounded-2xl bg-white border border-[#EAE2D8] focus:border-[#D4AF37] text-xs text-[#1D1917] placeholder-[#A8A29E] outline-none shadow-inner"
+                />
+                <User className="w-4 h-4 text-[#78716C] absolute left-3 top-2.5" />
+              </div>
+            </div>
+
+            {/* Email @edu.ece.fr */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[#14281D] block">
+                Email Étudiant Officiel ECE (@edu.ece.fr)
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="thomas.petit@edu.ece.fr"
+                  className="w-full pl-9 pr-4 py-2 rounded-2xl bg-white border border-[#EAE2D8] focus:border-[#D4AF37] text-xs text-[#1D1917] placeholder-[#A8A29E] outline-none shadow-inner"
+                />
+                <Mail className="w-4 h-4 text-[#78716C] absolute left-3 top-2.5" />
+              </div>
+            </div>
+
+            {/* Mot de passe & Confirmation */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[#14281D] block">
+                  Mot de Passe
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Min. 6 car."
+                  className="w-full px-3 py-2 rounded-2xl bg-white border border-[#EAE2D8] focus:border-[#D4AF37] text-xs text-[#1D1917] outline-none shadow-inner"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-[#14281D] block">
+                  Confirmation
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirmer"
+                  className="w-full px-3 py-2 rounded-2xl bg-white border border-[#EAE2D8] focus:border-[#D4AF37] text-xs text-[#1D1917] outline-none shadow-inner"
+                />
+              </div>
+            </div>
+
+            {/* Promotion */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[#14281D] block">
+                Promotion / Filière
+              </label>
+              <select
+                value={promo}
+                onChange={(e) => setPromo(e.target.value)}
+                className="w-full px-3 py-2 rounded-2xl bg-white border border-[#EAE2D8] focus:border-[#D4AF37] text-xs text-[#1D1917] outline-none shadow-inner"
+              >
+                <option value="ING1 (Promo 2029)">ING1 (Promo 2029)</option>
+                <option value="ING2 (Promo 2028)">ING2 (Promo 2028)</option>
+                <option value="ING3 (Promo 2027)">ING3 (Promo 2027)</option>
+                <option value="ING4 (Promo 2026)">ING4 (Promo 2026)</option>
+                <option value="ING5 (Promo 2025)">ING5 (Promo 2025)</option>
+                <option value="Alumni ECE">Alumni ECE Paris</option>
+                <option value="Enseignant / Staff ECE">Enseignant / Staff ECE</option>
+              </select>
+            </div>
+
+            {/* Notice Rôle Initial */}
+            <div className="p-3 rounded-2xl bg-[#FAF7F2] border border-[#D4AF37]/40 text-[11px] text-[#5C554E] space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-[#14281D]">
+                <Award className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <span>Statut à l&apos;inscription : Visiteur</span>
+              </div>
+              <p className="leading-tight text-[#78716C]">
+                Votre compte sera créé en tant que Visiteur. Le Pass Épicurien et vos réductions (-15%) s&apos;activeront dès souscription et validation de votre cotisation 10€.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 px-4 rounded-2xl skeuo-btn-pine text-xs font-extrabold flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition-all"
+            >
+              <span>{loading ? 'Création en cours...' : 'Créer mon Compte Épicurien'}</span>
+              <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
+            </button>
+          </form>
+        )}
+
+        {/* Quick Demo Switcher for Preview / Collaborators */}
+        <div className="pt-4 border-t border-[#EAE2D8] space-y-2 relative z-10">
+          <span className="text-[10px] font-extrabold text-[#78716C] uppercase tracking-wider block text-center">
+            ⚡ Accès Rapide Démo Collaborateurs :
+          </span>
           <div className="grid grid-cols-2 gap-2">
             <button
-              onClick={() => handleQuickLogin('visitor')}
-              className="p-2 rounded-xl bg-[#F6F1EA] hover:bg-[#EAE2D8] text-[#1D1917] font-bold text-xs border border-[#EAE2D8] transition-colors flex items-center justify-center gap-1"
-            >
-              <User className="w-3.5 h-3.5 text-[#78716C]" />
-              <span>Visiteur (Chloé)</span>
-            </button>
-
-            <button
-              onClick={() => handleQuickLogin('pending_visitor')}
-              className="p-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200 transition-colors flex items-center justify-center gap-1"
-            >
-              <Clock className="w-3.5 h-3.5 text-amber-600" />
-              <span>En attente (Maxime)</span>
-            </button>
-
-            <button
-              onClick={() => handleQuickLogin('member')}
-              className="p-2 rounded-xl bg-[#1B3B2B]/10 hover:bg-[#1B3B2B]/20 text-[#1B3B2B] font-bold text-xs border border-[#1B3B2B]/30 transition-colors"
-            >
-              🍷 Membre (Léonard)
-            </button>
-
-            <button
+              type="button"
               onClick={() => handleQuickLogin('admin')}
-              className="p-2 rounded-xl bg-[#58111A]/10 hover:bg-[#58111A]/20 text-[#58111A] font-bold text-xs border border-[#58111A]/30 transition-colors flex items-center justify-center gap-1"
+              className="p-2.5 rounded-2xl bg-white border border-[#D4AF37]/50 hover:border-[#14281D] text-[11px] font-bold text-[#14281D] shadow-sm hover:shadow transition-all flex items-center justify-between group"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
-              <span>Admin (Jules)</span>
+              <span>👑 Jules (Président)</span>
+              <ArrowRight className="w-3 h-3 text-[#D4AF37] group-hover:translate-x-0.5 transition-transform" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('member')}
+              className="p-2.5 rounded-2xl bg-white border border-[#EAE2D8] hover:border-[#2D5A3F] text-[11px] font-bold text-[#2D5A3F] shadow-sm hover:shadow transition-all flex items-center justify-between group"
+            >
+              <span>🧀 Léonard (Membre)</span>
+              <ArrowRight className="w-3 h-3 text-[#D4AF37] group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );

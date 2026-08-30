@@ -20,6 +20,7 @@ export interface UserProfile {
   avatarUrl?: string;
   bio?: string;
   favoriteTerroirs?: string[];
+  passwordHash?: string;
   createdAt: string;
   lastLogin?: string;
 }
