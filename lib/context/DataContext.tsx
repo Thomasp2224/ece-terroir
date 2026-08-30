@@ -121,9 +121,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn('Erreur lors du chargement des données depuis localStorage', e);
     }
 
-    // Charger les profils et requêtes réels depuis Supabase Cloud
+    // Charger toutes les entités réelles depuis Supabase Cloud
     const fetchSupabaseLive = async () => {
       try {
+        // 1. Profils
         const { data: profiles } = await supabase.from('profiles').select('*');
         if (profiles && profiles.length > 0) {
           const mappedProfiles: UserProfile[] = profiles.map((p) => ({
@@ -145,6 +146,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } catch (e) {}
         }
 
+        // 2. Demandes d'adhésion
         const { data: reqs } = await supabase.from('membership_requests').select('*');
         if (reqs && reqs.length > 0) {
           const mappedReqs: MembershipRequest[] = reqs.map((r) => ({
@@ -162,6 +164,129 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setMembershipRequests(mappedReqs);
           try {
             localStorage.setItem(STORAGE_KEYS.MEMBERSHIPS, JSON.stringify(mappedReqs));
+          } catch (e) {}
+        }
+
+        // 3. Événements
+        const { data: dbEvents } = await supabase.from('events').select('*').order('start_date', { ascending: true });
+        if (dbEvents && dbEvents.length > 0) {
+          const mappedEvents: EventItem[] = dbEvents.map((e) => ({
+            id: e.id,
+            title: e.title,
+            slug: e.slug,
+            description: e.description,
+            longDescription: e.long_description,
+            eventType: e.event_type,
+            startDate: e.start_date,
+            endDate: e.end_date,
+            location: e.location,
+            coverImageUrl: e.cover_image_url,
+            priceCents: e.price_cents,
+            helloAssoUrl: e.helloasso_url,
+            capacity: e.capacity,
+            remainingSeats: e.remaining_seats,
+            requiresBooking: e.requires_booking,
+            featured: e.featured,
+          }));
+          setEvents(mappedEvents);
+          try {
+            localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(mappedEvents));
+          } catch (e) {}
+        }
+
+        // 4. Produits Boutique
+        const { data: dbProducts } = await supabase.from('products').select('*');
+        if (dbProducts && dbProducts.length > 0) {
+          const mappedProducts: MerchProduct[] = dbProducts.map((p) => ({
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            description: p.description,
+            priceCents: p.price_cents,
+            imageUrl: p.image_url,
+            secondaryImages: p.secondary_images || [],
+            category: p.category,
+            sizes: p.sizes || [],
+            stock: p.stock,
+            featured: p.featured,
+            origin: p.origin,
+            craftsmanship: p.craftsmanship,
+            materials: p.materials,
+            careInstructions: p.care_instructions,
+            dimensionsOrWeight: p.dimensions_or_weight,
+          }));
+          setProducts(mappedProducts);
+          try {
+            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(mappedProducts));
+          } catch (e) {}
+        }
+
+        // 5. Articles Gazette
+        const { data: dbPosts } = await supabase.from('posts').select('*').order('published_at', { ascending: false });
+        if (dbPosts && dbPosts.length > 0) {
+          const mappedPosts: BlogPost[] = dbPosts.map((p) => ({
+            id: p.id,
+            title: p.title,
+            slug: p.slug,
+            excerpt: p.excerpt,
+            content: p.content,
+            coverImageUrl: p.cover_image_url,
+            category: p.category,
+            author: {
+              name: p.author_name,
+              role: p.author_role,
+              avatarUrl: p.author_avatar,
+            },
+            publishedAt: p.published_at,
+            readTimeMinutes: p.read_time_minutes,
+            tags: p.tags || [],
+          }));
+          setPosts(mappedPosts);
+          try {
+            localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(mappedPosts));
+          } catch (e) {}
+        }
+
+        // 6. Scans / Checkins
+        const { data: dbCheckins } = await supabase.from('event_checkins').select('*').order('checked_in_at', { ascending: false });
+        if (dbCheckins && dbCheckins.length > 0) {
+          const mappedCheckins: CheckInRecord[] = dbCheckins.map((c) => ({
+            id: c.id,
+            eventId: c.event_id,
+            eventTitle: c.event_title,
+            userId: c.user_id,
+            userMatricule: c.user_matricule,
+            userName: c.user_name,
+            userEmail: c.user_email,
+            userPromo: c.user_promo,
+            isMember: c.is_member,
+            checkedInAt: c.checked_in_at,
+            checkedInBy: c.checked_in_by,
+            entryStatus: c.entry_status,
+            notes: c.notes,
+          }));
+          setCheckIns(mappedCheckins);
+          try {
+            localStorage.setItem(STORAGE_KEYS.CHECK_INS, JSON.stringify(mappedCheckins));
+          } catch (e) {}
+        }
+
+        // 7. Logs d'audit
+        const { data: dbLogs } = await supabase.from('admin_logs').select('*').order('timestamp', { ascending: false }).limit(100);
+        if (dbLogs && dbLogs.length > 0) {
+          const mappedLogs: AdminLog[] = dbLogs.map((l) => ({
+            id: l.id,
+            timestamp: l.timestamp,
+            userEmail: l.user_email,
+            userName: l.user_name,
+            action: l.action,
+            category: l.category,
+            details: l.details,
+            ipAddress: l.ip_address,
+          }));
+          setAdminLogs(mappedLogs);
+          try {
+            localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(mappedLogs));
           } catch (e) {}
         }
       } catch (err) {
@@ -248,6 +373,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     const updated = [newLog, ...adminLogs].slice(0, 100);
     saveLogs(updated);
+    try {
+      supabase.from('admin_logs').insert({
+        id: newLog.id,
+        timestamp: newLog.timestamp,
+        user_email: newLog.userEmail,
+        user_name: newLog.userName,
+        action: newLog.action,
+        category: newLog.category,
+        details: newLog.details,
+        ip_address: newLog.ipAddress,
+      }).then();
+    } catch (e) {}
   };
 
   const clearAdminLogs = () => {
@@ -259,12 +396,52 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated = [event, ...events];
     saveEvents(updated);
     addAdminLog('Création Événement', 'event', `Création de l'événement « ${event.title} » (${event.eventType}).`);
+    try {
+      supabase.from('events').insert({
+        id: event.id,
+        title: event.title,
+        slug: event.slug,
+        description: event.description,
+        long_description: event.longDescription,
+        event_type: event.eventType,
+        start_date: event.startDate,
+        end_date: event.endDate,
+        location: event.location,
+        cover_image_url: event.coverImageUrl,
+        price_cents: event.priceCents,
+        helloasso_url: event.helloAssoUrl,
+        capacity: event.capacity,
+        remaining_seats: event.remainingSeats,
+        requires_booking: event.requiresBooking,
+        featured: event.featured,
+      }).then();
+    } catch (e) {}
   };
 
   const updateEvent = (id: string, updatedFields: Partial<EventItem>) => {
     const updated = events.map((evt) => (evt.id === id ? { ...evt, ...updatedFields } : evt));
     saveEvents(updated);
     addAdminLog('Modification Événement', 'event', `Modification de l'événement ID ${id} (${updatedFields.title || 'Détails'}).`);
+    try {
+      const payload: any = {};
+      if (updatedFields.title) payload.title = updatedFields.title;
+      if (updatedFields.slug) payload.slug = updatedFields.slug;
+      if (updatedFields.description) payload.description = updatedFields.description;
+      if (updatedFields.longDescription !== undefined) payload.long_description = updatedFields.longDescription;
+      if (updatedFields.eventType) payload.event_type = updatedFields.eventType;
+      if (updatedFields.startDate) payload.start_date = updatedFields.startDate;
+      if (updatedFields.endDate !== undefined) payload.end_date = updatedFields.endDate;
+      if (updatedFields.location) payload.location = updatedFields.location;
+      if (updatedFields.coverImageUrl) payload.cover_image_url = updatedFields.coverImageUrl;
+      if (updatedFields.priceCents !== undefined) payload.price_cents = updatedFields.priceCents;
+      if (updatedFields.helloAssoUrl !== undefined) payload.helloasso_url = updatedFields.helloAssoUrl;
+      if (updatedFields.capacity !== undefined) payload.capacity = updatedFields.capacity;
+      if (updatedFields.remainingSeats !== undefined) payload.remaining_seats = updatedFields.remainingSeats;
+      if (updatedFields.requiresBooking !== undefined) payload.requires_booking = updatedFields.requiresBooking;
+      if (updatedFields.featured !== undefined) payload.featured = updatedFields.featured;
+
+      supabase.from('events').update(payload).eq('id', id).then();
+    } catch (e) {}
   };
 
   const deleteEvent = (id: string) => {
@@ -272,6 +449,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated = events.filter((evt) => evt.id !== id);
     saveEvents(updated);
     addAdminLog('Suppression Événement', 'event', `Suppression de l'événement « ${target?.title || id} »`);
+    try {
+      supabase.from('events').delete().eq('id', id).then();
+    } catch (e) {}
   };
 
   // --- Posts CRUD ---
@@ -279,12 +459,44 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated = [post, ...posts];
     savePosts(updated);
     addAdminLog('Publication Article', 'post', `Publication du nouvel article « ${post.title} » dans ${post.category}.`);
+    try {
+      supabase.from('posts').insert({
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        excerpt: post.excerpt,
+        content: post.content,
+        cover_image_url: post.coverImageUrl,
+        category: post.category,
+        author_name: post.author.name,
+        author_role: post.author.role,
+        author_avatar: post.author.avatarUrl,
+        read_time_minutes: post.readTimeMinutes,
+        tags: post.tags,
+      }).then();
+    } catch (e) {}
   };
 
   const updatePost = (id: string, updatedFields: Partial<BlogPost>) => {
     const updated = posts.map((p) => (p.id === id ? { ...p, ...updatedFields } : p));
     savePosts(updated);
     addAdminLog('Modification Article', 'post', `Mise à jour de l'article ID ${id}.`);
+    try {
+      const payload: any = {};
+      if (updatedFields.title) payload.title = updatedFields.title;
+      if (updatedFields.slug) payload.slug = updatedFields.slug;
+      if (updatedFields.excerpt) payload.excerpt = updatedFields.excerpt;
+      if (updatedFields.content) payload.content = updatedFields.content;
+      if (updatedFields.coverImageUrl) payload.cover_image_url = updatedFields.coverImageUrl;
+      if (updatedFields.category) payload.category = updatedFields.category;
+      if (updatedFields.author?.name) payload.author_name = updatedFields.author.name;
+      if (updatedFields.author?.role) payload.author_role = updatedFields.author.role;
+      if (updatedFields.author?.avatarUrl) payload.author_avatar = updatedFields.author.avatarUrl;
+      if (updatedFields.readTimeMinutes) payload.read_time_minutes = updatedFields.readTimeMinutes;
+      if (updatedFields.tags) payload.tags = updatedFields.tags;
+
+      supabase.from('posts').update(payload).eq('id', id).then();
+    } catch (e) {}
   };
 
   const deletePost = (id: string) => {
@@ -292,6 +504,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated = posts.filter((p) => p.id !== id);
     savePosts(updated);
     addAdminLog('Suppression Article', 'post', `Suppression de l'article « ${target?.title || id} »`);
+    try {
+      supabase.from('posts').delete().eq('id', id).then();
+    } catch (e) {}
   };
 
   // --- Products CRUD ---
@@ -299,12 +514,52 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated = [product, ...products];
     saveProducts(updated);
     addAdminLog('Ajout Produit Merch', 'product', `Nouveau produit ajouté : « ${product.name} » (${(product.priceCents / 100).toFixed(2)} €).`);
+    try {
+      supabase.from('products').insert({
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        description: product.description,
+        price_cents: product.priceCents,
+        image_url: product.imageUrl,
+        secondary_images: product.secondaryImages || [],
+        category: product.category,
+        sizes: product.sizes || [],
+        stock: product.stock,
+        featured: product.featured,
+        origin: product.origin,
+        craftsmanship: product.craftsmanship,
+        materials: product.materials,
+        care_instructions: product.careInstructions,
+        dimensions_or_weight: product.dimensionsOrWeight,
+      }).then();
+    } catch (e) {}
   };
 
   const updateProduct = (id: string, updatedFields: Partial<MerchProduct>) => {
     const updated = products.map((prod) => (prod.id === id ? { ...prod, ...updatedFields } : prod));
     saveProducts(updated);
     addAdminLog('Modification Produit', 'product', `Modification du produit ID ${id}.`);
+    try {
+      const payload: any = {};
+      if (updatedFields.name) payload.name = updatedFields.name;
+      if (updatedFields.slug) payload.slug = updatedFields.slug;
+      if (updatedFields.description) payload.description = updatedFields.description;
+      if (updatedFields.priceCents !== undefined) payload.price_cents = updatedFields.priceCents;
+      if (updatedFields.imageUrl) payload.image_url = updatedFields.imageUrl;
+      if (updatedFields.secondaryImages) payload.secondary_images = updatedFields.secondaryImages;
+      if (updatedFields.category) payload.category = updatedFields.category;
+      if (updatedFields.sizes) payload.sizes = updatedFields.sizes;
+      if (updatedFields.stock !== undefined) payload.stock = updatedFields.stock;
+      if (updatedFields.featured !== undefined) payload.featured = updatedFields.featured;
+      if (updatedFields.origin) payload.origin = updatedFields.origin;
+      if (updatedFields.craftsmanship) payload.craftsmanship = updatedFields.craftsmanship;
+      if (updatedFields.materials) payload.materials = updatedFields.materials;
+      if (updatedFields.careInstructions) payload.care_instructions = updatedFields.careInstructions;
+      if (updatedFields.dimensionsOrWeight) payload.dimensions_or_weight = updatedFields.dimensionsOrWeight;
+
+      supabase.from('products').update(payload).eq('id', id).then();
+    } catch (e) {}
   };
 
   const deleteProduct = (id: string) => {
@@ -312,12 +567,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated = products.filter((prod) => prod.id !== id);
     saveProducts(updated);
     addAdminLog('Retrait Produit', 'product', `Retrait du produit « ${target?.name || id} » de la boutique.`);
+    try {
+      supabase.from('products').delete().eq('id', id).then();
+    } catch (e) {}
   };
 
   const updateStock = (productId: string, delta: number) => {
     const updated = products.map((prod) => {
       if (prod.id === productId) {
         const newStock = Math.max(0, prod.stock + delta);
+        try {
+          supabase.from('products').update({ stock: newStock }).eq('id', productId).then();
+        } catch (e) {}
         return { ...prod, stock: newStock };
       }
       return prod;
@@ -464,6 +725,27 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (e) {}
 
+    try {
+      supabase.from('membership_requests').insert({
+        id: request.id,
+        user_id: request.userId,
+        user_name: request.userName,
+        user_email: request.userEmail,
+        user_promo: request.userPromo,
+        amount_cents: request.amountCents,
+        payment_method: request.paymentMethod,
+        status: request.status,
+        requested_at: request.requestedAt,
+        notes: request.notes,
+      }).then();
+
+      supabase.from('profiles').update({
+        membership_status: 'pending',
+        membership_requested_at: request.requestedAt,
+        membership_payment_method: request.paymentMethod,
+      }).eq('email', request.userEmail.toLowerCase()).then();
+    } catch (e) {}
+
     addAdminLog(
       'Demande de Cotisation',
       'user',
@@ -517,6 +799,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (e) {}
 
+    try {
+      supabase.from('membership_requests').update({
+        status: 'approved',
+        reviewed_at: now,
+        reviewed_by: reviewerName,
+      }).eq('id', requestId).then();
+
+      supabase.from('profiles').update({
+        role: 'member',
+        membership_status: 'active',
+        membership_approved_at: now,
+      }).eq('email', targetReq.userEmail.toLowerCase()).then();
+    } catch (e) {}
+
     addAdminLog(
       'Validation Cotisation & Adhésion',
       'user',
@@ -550,6 +846,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return u;
     });
     saveUsers(updatedUsers);
+
+    try {
+      supabase.from('membership_requests').update({
+        status: 'rejected',
+        reviewed_at: now,
+        reviewed_by: reviewerName,
+      }).eq('id', requestId).then();
+
+      supabase.from('profiles').update({
+        membership_status: 'rejected',
+      }).eq('email', targetReq.userEmail.toLowerCase()).then();
+    } catch (e) {}
 
     addAdminLog(
       'Refus Cotisation',
@@ -676,6 +984,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const updatedCheckIns = [newRecord, ...checkIns];
     saveCheckIns(updatedCheckIns);
+
+    try {
+      supabase.from('event_checkins').insert({
+        id: newRecord.id,
+        event_id: newRecord.eventId,
+        event_title: newRecord.eventTitle,
+        user_id: newRecord.userId,
+        user_matricule: newRecord.userMatricule,
+        user_name: newRecord.userName,
+        user_email: newRecord.userEmail,
+        user_promo: newRecord.userPromo,
+        is_member: newRecord.isMember,
+        checked_in_at: newRecord.checkedInAt,
+        checked_in_by: newRecord.checkedInBy,
+        entry_status: newRecord.entryStatus,
+        notes: newRecord.notes,
+      }).then();
+    } catch (e) {}
 
     addAdminLog(
       'Émargement Soirée',
