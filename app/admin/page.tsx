@@ -61,7 +61,9 @@ import {
   Terminal,
   Code,
   Copy,
-  CheckCheck
+  CheckCheck,
+  Lock,
+  ArrowRight
 } from 'lucide-react';
 import CheckInScannerModal from '@/components/admin/CheckInScannerModal';
 import * as XLSX from 'xlsx';
@@ -565,12 +567,48 @@ export default function AdminDashboardPage() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(adminLogs, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `ece_terroir_audit_logs_${new Date().toISOString().slice(0, 10)}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
     triggerSuccess('Fichier de logs exporté en JSON !');
   };
+
+  // Contrôle d'accès strict : Réservé exclusivement aux comptes du Bureau Admin
+  if (!user || user.role !== 'admin') {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center px-4 py-12">
+        <div className="max-w-md w-full liquid-glass rounded-3xl p-8 text-center space-y-5 border border-red-200 shadow-2xl bg-white/90">
+          <div className="w-16 h-16 rounded-3xl bg-red-50 text-[#58111A] flex items-center justify-center mx-auto border border-red-200 shadow-inner">
+            <Lock className="w-8 h-8 text-[#58111A]" />
+          </div>
+          <div className="space-y-2">
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#D4AF37] bg-[#14281D] px-3 py-1 rounded-full">
+              Accès Restreint au Bureau
+            </span>
+            <h1 className="font-serif-title font-extrabold text-2xl text-[#14281D]">
+              Espace Administrateur Réservé
+            </h1>
+            <p className="text-xs text-[#78716C] leading-relaxed">
+              Cet espace est strictement réservé aux membres du Bureau officiel d&apos;ECE Terroir. Les données d&apos;adhésions, statistiques et trésorerie sont protégées.
+            </p>
+          </div>
+
+          <div className="space-y-2 pt-2">
+            <Link
+              href="/login"
+              className="w-full py-3 px-4 rounded-2xl skeuo-btn-pine text-xs font-extrabold flex items-center justify-center gap-2 shadow"
+            >
+              <span>Se Connecter avec un Compte Bureau</span>
+              <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
+            </Link>
+            <Link
+              href="/"
+              className="w-full py-2.5 px-4 rounded-2xl skeuo-btn-cream text-xs font-bold flex items-center justify-center text-[#14281D]"
+            >
+              Retour à l&apos;accueil
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-12 sm:py-16 bg-[#FDFBF7] min-h-screen">

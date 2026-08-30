@@ -16,7 +16,8 @@ import {
   ChevronRight, 
   Sparkles, 
   Award,
-  LogOut
+  LogOut,
+  Crown
 } from 'lucide-react';
 import { useAuth } from '@/lib/context/AuthContext';
 import { useCart } from '@/lib/context/CartContext';
@@ -34,8 +35,10 @@ export function AppSidebar({ isCollapsed, onToggleCollapse }: AppSidebarProps) {
   const { events, membershipRequests } = useData();
 
   const pendingCount = membershipRequests ? membershipRequests.filter((r) => r.status === 'pending').length : 0;
+  const isAdmin = user?.role === 'admin';
+  const isMember = user?.role === 'member' || user?.membershipStatus === 'active';
 
-  // Navigation Items
+  // Navigation Items (Accessible par TOUS les utilisateurs)
   const navItems = [
     {
       href: '/',
@@ -80,8 +83,6 @@ export function AppSidebar({ isCollapsed, onToggleCollapse }: AppSidebarProps) {
     badgeColor: 'bg-[#58111A] text-white animate-pulse',
   };
 
-  const isMemberActive = user?.role === 'member' || user?.role === 'admin' || user?.membershipStatus === 'active';
-
   return (
     <aside
       className={`hidden lg:flex flex-col justify-between fixed top-3 left-3 bottom-3 z-40 transition-all duration-300 ease-in-out ${
@@ -99,21 +100,22 @@ export function AppSidebar({ isCollapsed, onToggleCollapse }: AppSidebarProps) {
         <div className="space-y-4 relative z-10">
           <div className="flex items-center justify-between px-1.5 pt-1">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#14281D] to-[#264E3A] p-2 flex items-center justify-center border border-[#D4AF37]/40 shadow-md group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#14281D] to-[#264E3A] p-1.5 flex items-center justify-center border border-[#D4AF37]/40 shadow-md group-hover:scale-105 transition-transform shrink-0">
                 <Image
                   src="/logo.png"
-                  alt="ECE Terroir"
-                  width={30}
-                  height={30}
+                  alt="ECE Terroir Logo"
+                  width={28}
+                  height={28}
                   className="object-contain filter brightness-110"
                 />
               </div>
+
               {!isCollapsed && (
-                <div className="flex flex-col">
-                  <span className="font-serif-title font-extrabold text-base text-[#14281D] tracking-tight group-hover:text-[#2D5A3F] transition-colors leading-none">
+                <div className="flex flex-col min-w-0">
+                  <span className="font-serif-title font-extrabold text-sm text-[#14281D] tracking-tight truncate">
                     ECE Terroir
                   </span>
-                  <span className="text-[10px] font-bold text-[#D4AF37] tracking-widest uppercase mt-0.5">
+                  <span className="text-[10px] font-bold text-[#78716C] tracking-wider uppercase">
                     Paris • Confrérie
                   </span>
                 </div>
@@ -123,8 +125,8 @@ export function AppSidebar({ isCollapsed, onToggleCollapse }: AppSidebarProps) {
             {/* Collapse / Expand Toggle Button */}
             <button
               onClick={onToggleCollapse}
-              title={isCollapsed ? "Déployer le menu" : "Réduire le menu"}
-              className="w-7 h-7 rounded-xl bg-[#FAF7F2] hover:bg-[#F3EDE2] border border-[#EAE2D8] flex items-center justify-center text-[#78716C] hover:text-[#14281D] transition-all shadow-sm"
+              className="p-1.5 rounded-xl hover:bg-white/80 text-[#78716C] hover:text-[#14281D] border border-transparent hover:border-[#EAE2D8] transition-all"
+              title={isCollapsed ? 'Déplier la barre latérale' : 'Réduire la barre latérale'}
             >
               {isCollapsed ? (
                 <ChevronRight className="w-4 h-4" />
@@ -133,9 +135,6 @@ export function AppSidebar({ isCollapsed, onToggleCollapse }: AppSidebarProps) {
               )}
             </button>
           </div>
-
-          {/* Divider */}
-          <div className="h-[1px] bg-gradient-to-r from-transparent via-[#EAE2D8] to-transparent w-full" />
 
           {/* Navigation Links */}
           <nav className="space-y-1.5">
@@ -176,8 +175,8 @@ export function AppSidebar({ isCollapsed, onToggleCollapse }: AppSidebarProps) {
               );
             })}
 
-            {/* Admin link for members / presidents */}
-            {(user?.role === 'admin' || user?.role === 'member') && (
+            {/* ONGLET ADMINISTRATION : STRICTEMENT RÉSERVÉ AUX ADMINS */}
+            {isAdmin && (
               <div className="pt-2">
                 <div className="h-[1px] bg-[#EAE2D8]/60 my-2" />
                 <Link
@@ -186,7 +185,7 @@ export function AppSidebar({ isCollapsed, onToggleCollapse }: AppSidebarProps) {
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all ${
                     pathname.startsWith('/admin')
                       ? 'bg-[#14281D] text-[#D4AF37] border border-[#D4AF37]/50 shadow-md'
-                      : 'text-[#78716C] hover:text-[#14281D] hover:bg-white/60'
+                      : 'text-[#58111A] hover:text-[#14281D] hover:bg-white/60 bg-red-50/50'
                   }`}
                 >
                   <Shield className="w-4 h-4 text-[#D4AF37]" />
@@ -215,66 +214,74 @@ export function AppSidebar({ isCollapsed, onToggleCollapse }: AppSidebarProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg bg-[#14281D] text-[#D4AF37] flex items-center justify-center">
-                    <Award className="w-3.5 h-3.5" />
+                    {isAdmin ? <Crown className="w-3.5 h-3.5" /> : <Award className="w-3.5 h-3.5" />}
                   </div>
                   <span className="text-[11px] font-extrabold text-[#14281D]">
-                    {isMemberActive ? 'Pass Épicurien Actif' : 'Adhésion 2026-2027'}
+                    {isAdmin ? 'Bureau Admin' : isMember ? 'Pass Épicurien' : 'Visiteur'}
                   </span>
                 </div>
-                {isMemberActive && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                {isMember && (
+                  <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
+                    Actif
+                  </span>
                 )}
               </div>
-              <p className="text-[10px] text-[#78716C] leading-tight">
-                {isMemberActive 
-                  ? '-15% boutique, accès soirées & dégustations privées.'
-                  : 'Cotisation 10€ pour profiter de tous les festins.'}
-              </p>
-              {!isMemberActive && (
-                <Link
-                  href="/adhesion"
-                  className="block text-center w-full py-1.5 rounded-xl bg-[#14281D] text-[#D4AF37] text-[10px] font-bold shadow hover:bg-[#1E3D2C] transition-all"
-                >
-                  Prendre mon Pass (10€)
-                </Link>
+
+              {!isMember && !isAdmin ? (
+                <div className="space-y-1.5 pt-1">
+                  <p className="text-[10px] text-[#78716C]">
+                    Cotisation 10€ pour profiter de tous les festins et de -15%.
+                  </p>
+                  <Link
+                    href="/adhesion"
+                    className="block text-center py-1.5 px-2.5 rounded-xl skeuo-btn-pine text-[10px] font-extrabold shadow-sm"
+                  >
+                    Prendre mon Pass (10€)
+                  </Link>
+                </div>
+              ) : (
+                <div className="pt-0.5">
+                  <p className="text-[10px] text-[#78716C] truncate">
+                    {user?.promo || 'Promo ECE Paris'}
+                  </p>
+                </div>
               )}
             </div>
           ) : (
-            <Link
-              href="/adhesion"
-              title="Prendre mon Pass Épicurien"
-              className="w-10 h-10 mx-auto rounded-2xl bg-[#14281D] text-[#D4AF37] flex items-center justify-center border border-[#D4AF37]/40 hover:scale-105 transition-all shadow-md"
-            >
-              <Award className="w-5 h-5" />
-            </Link>
+            <div className="flex justify-center">
+              <div className="w-8 h-8 rounded-xl bg-[#14281D] text-[#D4AF37] flex items-center justify-center shadow-sm" title={isAdmin ? 'Bureau' : isMember ? 'Pass Actif' : 'Visiteur'}>
+                {isAdmin ? <Crown className="w-4 h-4" /> : <Award className="w-4 h-4" />}
+              </div>
+            </div>
           )}
 
-          {/* User Account / Profile Button */}
+          {/* User Account / Login Button */}
           {user ? (
-            <div className="flex items-center justify-between gap-2 p-1.5 rounded-2xl bg-white/60 hover:bg-white border border-[#EAE2D8] transition-all">
+            <div className="flex items-center justify-between gap-2 px-1">
               <Link
                 href="/profil"
-                className="flex items-center gap-2.5 flex-1 min-w-0"
+                className="flex items-center gap-2 min-w-0 flex-1 hover:opacity-80 transition-opacity"
               >
-                <div className="w-8 h-8 rounded-xl bg-[#14281D] text-[#D4AF37] flex items-center justify-center font-bold text-xs shrink-0 border border-[#D4AF37]/30 shadow-inner">
-                  {user.fullName ? user.fullName[0].toUpperCase() : 'U'}
+                <div className="w-7 h-7 rounded-full bg-[#14281D] text-[#D4AF37] font-bold text-xs flex items-center justify-center shrink-0 border border-[#D4AF37]/30">
+                  {user.fullName.charAt(0)}
                 </div>
                 {!isCollapsed && (
-                  <div className="truncate">
+                  <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-[#14281D] truncate leading-tight">
                       {user.fullName}
                     </p>
                     <p className="text-[10px] text-[#78716C] truncate">
-                      {user.role === 'admin' ? '👑 Président' : isMemberActive ? '🧀 Membre Actif' : 'Visiteur'}
+                      {isAdmin ? '👑 Bureau' : isMember ? '🧀 Membre' : 'Visiteur'}
                     </p>
                   </div>
                 )}
               </Link>
+
               {!isCollapsed && (
                 <button
                   onClick={logout}
+                  className="p-1.5 rounded-xl text-[#78716C] hover:text-[#58111A] hover:bg-white/80 transition-all"
                   title="Se déconnecter"
-                  className="p-1.5 text-[#78716C] hover:text-[#58111A] hover:bg-[#58111A]/10 rounded-xl transition-all"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
@@ -283,13 +290,9 @@ export function AppSidebar({ isCollapsed, onToggleCollapse }: AppSidebarProps) {
           ) : (
             <Link
               href="/login"
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-2xl text-xs font-bold transition-all shadow-sm ${
-                isCollapsed
-                  ? 'w-10 h-10 mx-auto bg-[#14281D] text-[#FAF7F2]'
-                  : 'w-full bg-[#14281D] text-[#FAF7F2] hover:bg-[#1E3D2C] border border-[#D4AF37]/30'
-              }`}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-2xl skeuo-btn-cream text-xs font-bold transition-all shadow-sm"
             >
-              <User className="w-4 h-4 text-[#D4AF37]" />
+              <User className="w-3.5 h-3.5 text-[#14281D]" />
               {!isCollapsed && <span>Se Connecter</span>}
             </Link>
           )}

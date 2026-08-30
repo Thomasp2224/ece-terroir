@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { QrCode, Award, ShieldCheck, Download, ArrowRight, Check } from 'lucide-react';
+import { QrCode, Award, ShieldCheck, Download, ArrowRight, Check, Crown, Lock } from 'lucide-react';
 import { useAuth } from '@/lib/context/AuthContext';
 import { getMemberMatricule } from '@/lib/utils/matricule';
 import { downloadMembershipCertificateHD } from '@/lib/utils/certificate-generator';
@@ -12,8 +12,9 @@ export function MiniPassWidget() {
   const [showQrModal, setShowQrModal] = useState(false);
   const [isGeneratingA4, setIsGeneratingA4] = useState(false);
 
-  const isMemberActive = user?.role === 'member' || user?.role === 'admin' || user?.membershipStatus === 'active';
-  const matricule = user ? getMemberMatricule(user) : 'ECE-TERR-2026-DEMO';
+  const isAdmin = user?.role === 'admin';
+  const isMemberActive = user?.role === 'member' || isAdmin || user?.membershipStatus === 'active';
+  const matricule = user ? getMemberMatricule(user) : 'ECE-TERR-2026-VISITEUR';
 
   const handleDownloadA4 = async () => {
     if (!user) return;
@@ -39,8 +40,22 @@ export function MiniPassWidget() {
           {/* Header Tag */}
           <div className="flex items-center justify-between">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#14281D] text-[#D4AF37] text-[11px] font-extrabold uppercase tracking-wider border border-[#D4AF37]/30 shadow-sm">
-              <Award className="w-3.5 h-3.5 text-[#D4AF37]" />
-              {isMemberActive ? 'Pass Épicurien Actif' : 'Carte de Membre'}
+              {isAdmin ? (
+                <>
+                  <Crown className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  Pass Bureau Admin
+                </>
+              ) : isMemberActive ? (
+                <>
+                  <Award className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  Pass Épicurien Actif
+                </>
+              ) : (
+                <>
+                  <Lock className="w-3.5 h-3.5 text-[#D4AF37]" />
+                  Statut Visiteur
+                </>
+              )}
             </div>
             
             {isMemberActive && (
@@ -53,8 +68,12 @@ export function MiniPassWidget() {
 
           {/* 3D Brushed Metal Mini Card */}
           <div
-            onClick={() => setShowQrModal(true)}
-            className="p-4 rounded-2xl bg-gradient-to-br from-[#EAE6DF] via-[#FAF7F2] to-[#D8D2C5] border border-[#D4AF37]/50 shadow-md hover:shadow-xl transition-all cursor-pointer relative overflow-hidden group/card"
+            onClick={() => isMemberActive ? setShowQrModal(true) : null}
+            className={`p-4 rounded-2xl border shadow-md transition-all relative overflow-hidden group/card ${
+              isMemberActive 
+                ? 'bg-gradient-to-br from-[#EAE6DF] via-[#FAF7F2] to-[#D8D2C5] border-[#D4AF37]/50 hover:shadow-xl cursor-pointer' 
+                : 'bg-gradient-to-br from-[#F5F2ED] to-[#EAE2D8] border-[#D8CCC0] opacity-80'
+            }`}
           >
             {/* Metallic Sheen Line */}
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white to-transparent" />
@@ -62,7 +81,7 @@ export function MiniPassWidget() {
             <div className="flex items-center justify-between gap-3">
               <div className="space-y-1 min-w-0">
                 <span className="text-[9px] font-extrabold text-[#78716C] tracking-widest uppercase block">
-                  Matricule Officiel
+                  {isAdmin ? 'Matricule Bureau' : isMemberActive ? 'Matricule Adhérent' : 'Aperçu Pass'}
                 </span>
                 <p className="font-mono text-xs sm:text-sm font-black text-[#14281D] tracking-wider truncate">
                   {matricule}
@@ -76,7 +95,9 @@ export function MiniPassWidget() {
               {/* QR Code Icon with Holographic Border */}
               <div className="w-14 h-14 rounded-xl bg-white p-1.5 border border-[#D4AF37]/40 shadow-inner flex flex-col items-center justify-center shrink-0 group-hover/card:scale-105 transition-transform relative">
                 <QrCode className="w-9 h-9 text-[#14281D]" />
-                <span className="text-[7px] font-extrabold text-[#78716C] uppercase">Scan</span>
+                <span className="text-[7px] font-extrabold text-[#78716C] uppercase">
+                  {isMemberActive ? 'Scan' : 'Verrouillé'}
+                </span>
               </div>
             </div>
 
@@ -102,7 +123,7 @@ export function MiniPassWidget() {
 
         {/* Bottom CTA */}
         <div className="pt-2 border-t border-[#EAE2D8]/80 flex items-center gap-2">
-          {user && isMemberActive ? (
+          {isMemberActive ? (
             <>
               <button
                 onClick={handleDownloadA4}
@@ -113,9 +134,9 @@ export function MiniPassWidget() {
                 <span>{isGeneratingA4 ? 'Génération...' : 'Attestation A4'}</span>
               </button>
               <Link
-                href="/profil"
+                href={isAdmin ? "/admin" : "/profil"}
                 className="p-2 rounded-2xl skeuo-btn-pine flex items-center justify-center"
-                title="Accéder à mon espace profil complet"
+                title={isAdmin ? "Ouvrir le panneau d'administration" : "Accéder à mon espace profil complet"}
               >
                 <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
               </Link>
@@ -155,7 +176,7 @@ export function MiniPassWidget() {
               </p>
             </div>
 
-            {/* Big QR Placeholder */}
+            {/* Big QR Code */}
             <div className="w-48 h-48 mx-auto rounded-2xl bg-[#FAF7F2] p-4 border-2 border-[#14281D] flex flex-col items-center justify-center shadow-inner">
               <QrCode className="w-32 h-32 text-[#14281D]" />
               <span className="font-mono text-[11px] font-bold text-[#14281D] mt-1">

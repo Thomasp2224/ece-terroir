@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Search, ShoppingBag, QrCode, MapPin, Award } from 'lucide-react';
+import { Search, ShoppingBag, QrCode, MapPin, Award, Shield, Crown } from 'lucide-react';
 import { useAuth } from '@/lib/context/AuthContext';
 import { useCart } from '@/lib/context/CartContext';
 
@@ -17,6 +17,9 @@ export function TopHeader({ onOpenCart }: TopHeaderProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { itemCount, setIsDrawerOpen } = useCart();
+
+  const isAdmin = user?.role === 'admin';
+  const isMember = user?.role === 'member' || user?.membershipStatus === 'active';
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +40,7 @@ export function TopHeader({ onOpenCart }: TopHeaderProps) {
     <header className="sticky top-3 z-30 mb-6">
       <div className="liquid-glass rounded-3xl p-2.5 sm:p-3 border border-white/80 shadow-lg flex items-center justify-between gap-3 bg-white/75 backdrop-blur-xl">
         
-        {/* Left : Mobile Logo & Title */}
+        {/* Left : Mobile Logo & Location */}
         <div className="flex items-center gap-3">
           <Link href="/" className="lg:hidden flex items-center gap-2">
             <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#14281D] to-[#264E3A] p-1.5 flex items-center justify-center border border-[#D4AF37]/40 shadow-sm">
@@ -68,11 +71,22 @@ export function TopHeader({ onOpenCart }: TopHeaderProps) {
           <Search className="w-4 h-4 text-[#78716C] absolute left-3 top-2.5 pointer-events-none" />
         </form>
 
-        {/* Right : Action Buttons (Cart, Pass, Member Tag) */}
+        {/* Right : Action Buttons based on User Role */}
         <div className="flex items-center gap-2">
           
-          {/* Adhesion CTA if not logged in / visitor */}
-          {!user && (
+          {/* Admin shortcut if logged as Bureau Admin */}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-[#14281D] text-[#D4AF37] text-xs font-extrabold border border-[#D4AF37]/40 shadow hover:scale-105 transition-all"
+            >
+              <Crown className="w-3.5 h-3.5" />
+              <span>Panneau Bureau</span>
+            </Link>
+          )}
+
+          {/* Non-member / Visitor CTA */}
+          {!isMember && !isAdmin && (
             <Link
               href="/adhesion"
               className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-gradient-to-r from-[#14281D] to-[#1E3D2C] text-[#D4AF37] text-xs font-extrabold border border-[#D4AF37]/30 shadow hover:scale-105 transition-all"
@@ -82,8 +96,8 @@ export function TopHeader({ onOpenCart }: TopHeaderProps) {
             </Link>
           )}
 
-          {/* User Quick Pass QR Modal Trigger */}
-          {user && (
+          {/* Member Quick Pass QR Modal Trigger */}
+          {isMember && !isAdmin && (
             <Link
               href="/profil"
               className="p-2 rounded-2xl bg-[#FAF7F2] hover:bg-[#F3EDE2] border border-[#EAE2D8] text-[#14281D] transition-all flex items-center gap-1.5"
