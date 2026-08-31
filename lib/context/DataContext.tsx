@@ -73,7 +73,7 @@ const STORAGE_KEYS = {
   POSTS: 'ece_terroir_posts_v3',
   PRODUCTS: 'ece_terroir_products_v3',
   ORDERS: 'ece_terroir_orders_v3',
-  USERS: 'ece_terroir_users_v3',
+  USERS: 'ece_terroir_users_v4',
   LOGS: 'ece_terroir_logs_v3',
   SOCIAL_POSTS: 'ece_terroir_social_posts_v3',
   MEMBERSHIPS: 'ece_terroir_memberships_v3',
@@ -664,6 +664,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     saveUsers(updated);
     addAdminLog('Création Utilisateur', 'user', `Compte créé pour ${user.fullName} (${user.email}) avec le rôle ${user.role}.`);
     syncDriveExcel(updated, membershipRequests);
+
+    try {
+      supabase.from('profiles').upsert({
+        id: user.id.startsWith('usr-') ? undefined : user.id,
+        email: user.email,
+        full_name: user.fullName,
+        promo: user.promo,
+        role: user.role,
+        status: user.status,
+        membership_status: user.membershipStatus,
+        bio: user.bio,
+        favorite_terroirs: user.favoriteTerroirs || [],
+        created_at: user.createdAt,
+        last_login: new Date().toISOString(),
+      }).then();
+    } catch (e) {}
   };
 
   const updateUser = (id: string, updatedFields: Partial<UserProfile>) => {
@@ -684,6 +700,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     addAdminLog('Modification Utilisateur', 'user', `Profil mis à jour pour l'utilisateur ID ${id} (${updatedFields.role ? `Nouveau rôle : ${updatedFields.role}` : ''} ${updatedFields.status ? `Nouveau statut : ${updatedFields.status}` : ''}).`);
     syncDriveExcel(updated, membershipRequests);
+
+    try {
+      const payload: any = {};
+      if (updatedFields.fullName) payload.full_name = updatedFields.fullName;
+      if (updatedFields.promo) payload.promo = updatedFields.promo;
+      if (updatedFields.role) payload.role = updatedFields.role;
+      if (updatedFields.status) payload.status = updatedFields.status;
+      if (updatedFields.membershipStatus) payload.membership_status = updatedFields.membershipStatus;
+      if (updatedFields.bio !== undefined) payload.bio = updatedFields.bio;
+      if (updatedFields.favoriteTerroirs) payload.favorite_terroirs = updatedFields.favoriteTerroirs;
+
+      supabase.from('profiles').update(payload).eq('id', id).then();
+    } catch (e) {}
   };
 
   const deleteUser = (id: string) => {
@@ -692,6 +721,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     saveUsers(updated);
     addAdminLog('Suppression Utilisateur', 'user', `Suppression du compte de ${target?.fullName || id} (${target?.email}).`);
     syncDriveExcel(updated, membershipRequests);
+
+    try {
+      supabase.from('profiles').delete().eq('id', id).then();
+    } catch (e) {}
   };
 
   // --- Social Posts CRUD ---
