@@ -290,12 +290,54 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(mappedLogs));
           } catch (e) {}
         }
+        // 8. Commandes Boutique
+        const { data: dbOrders } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+        if (dbOrders && dbOrders.length > 0) {
+          const mappedOrders: MerchOrder[] = dbOrders.map((o) => ({
+            id: o.id,
+            orderNumber: o.order_number,
+            voucherCode: o.voucher_code || o.order_number,
+            userId: o.user_id,
+            userEmail: o.user_email,
+            userName: o.user_name,
+            items: o.items || [],
+            totalCents: o.total_cents,
+            paymentMethod: o.payment_method,
+            status: o.status,
+            pickupLocation: o.pickup_location,
+            pickupNotes: o.pickup_notes,
+            createdAt: o.created_at,
+          }));
+          setOrders(mappedOrders);
+          try {
+            localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(mappedOrders));
+          } catch (e) {}
+        }
       } catch (err) {
         console.warn('Supabase fetch error:', err);
       }
     };
 
     fetchSupabaseLive();
+
+    // ⚡ Abonnement Realtime Supabase pour synchronisation immédiate multi-appareils
+    let channel: any;
+    try {
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+        channel = supabase
+          .channel('schema-db-changes')
+          .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+            fetchSupabaseLive();
+          })
+          .subscribe();
+      }
+    } catch (e) {}
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, []);
 
   // Helpers to persist in localStorage
@@ -630,13 +672,35 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }).catch((e) => console.warn('Erreur envoi email commande:', e));
     } catch (e) {}
 
+    // Sauvegarde dans Supabase Cloud
+    try {
+      supabase.from('orders').insert({
+        order_number: newOrder.orderNumber,
+        voucher_code: newOrder.voucherCode,
+        user_id: newOrder.userId?.startsWith('usr-') ? undefined : newOrder.userId,
+        user_email: newOrder.userEmail,
+        user_name: newOrder.userName,
+        items: newOrder.items,
+        total_cents: newOrder.totalCents,
+        payment_method: newOrder.paymentMethod,
+        status: newOrder.status,
+        pickup_location: newOrder.pickupLocation,
+        pickup_notes: newOrder.pickupNotes,
+        created_at: newOrder.createdAt,
+      }).then();
+    } catch (e) {}
+
     return newOrder;
   };
 
   const updateOrderStatus = (orderId: string, status: 'pending' | 'ready_for_pickup' | 'completed' | 'cancelled') => {
-    const updated = orders.map((o) => (o.id === orderId ? { ...o, status } : o));
+    const updated = orders.map((o) => (o.id === orderId || o.orderNumber === orderId ? { ...o, status } : o));
     saveOrders(updated);
     addAdminLog('Statut Commande', 'order', `Commande #${orderId} passée au statut : ${status}.`);
+
+    try {
+      supabase.from('orders').update({ status }).or(`id.eq.${orderId},order_number.eq.${orderId}`).then();
+    } catch (e) {}
   };
 
   // --- Excel Drive Sync Helper ---
