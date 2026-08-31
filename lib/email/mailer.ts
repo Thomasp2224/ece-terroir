@@ -356,3 +356,94 @@ export async function sendEventTicketEmail(params: EventTicketEmailParams) {
 
   return { success: true, mode: 'smtp_real', messageId: info.messageId, recipient: params.userEmail };
 }
+
+// ==============================================================================
+// 4. EMAIL DE RÉINITIALISATION DE MOT DE PASSE (SÉCURITÉ)
+// ==============================================================================
+export interface PasswordResetEmailParams {
+  fullName: string;
+  email: string;
+  resetCode: string;
+  resetLink?: string;
+}
+
+export function generatePasswordResetEmailHtml(params: PasswordResetEmailParams): string {
+  const safeFullName = escapeHtml(params.fullName);
+  const safeResetCode = escapeHtml(params.resetCode);
+
+  return `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Réinitialisation de votre mot de passe ECE Terroir</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #FAF7F2; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+    .container { max-width: 560px; margin: 30px auto; background-color: #FFFFFF; border-radius: 24px; overflow: hidden; border: 1px solid #EAE2D8; box-shadow: 0 20px 40px rgba(20,40,29,0.08); }
+    .header { background-color: #14281D; color: #FAF7F2; padding: 35px 30px; text-align: center; border-bottom: 2px solid #D4AF37; }
+    .content { padding: 35px 30px; }
+    .code-box { background: #FAF7F2; border: 2px dashed #D4AF37; border-radius: 16px; padding: 20px; text-align: center; margin: 25px 0; }
+    .code { font-family: monospace; font-size: 32px; font-weight: 900; letter-spacing: 6px; color: #58111A; }
+    .footer { background-color: #F4EFEA; padding: 20px 30px; text-align: center; font-size: 11px; color: #78716C; border-top: 1px solid #EAE2D8; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div style="font-size: 32px;">🔐🍷</div>
+      <h1 style="margin: 10px 0 5px; font-size: 22px;">Réinitialisation de Mot de Passe</h1>
+      <p style="margin: 0; font-size: 12px; color: #D4AF37; font-weight: bold; text-transform: uppercase;">
+        Plateforme Étudiante ECE Terroir
+      </p>
+    </div>
+
+    <div class="content">
+      <p style="font-size: 15px;">Bonjour <strong>${safeFullName}</strong>,</p>
+      <p style="font-size: 14px; color: #5C554E; line-height: 1.6;">
+        Nous avons reçu une demande de réinitialisation de mot de passe pour votre compte étudiant ECE Terroir (<strong style="color: #14281D;">${escapeHtml(params.email)}</strong>).
+      </p>
+
+      <div class="code-box">
+        <span style="font-size: 11px; font-weight: 800; color: #78716C; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 8px;">
+          Votre Code de Sécurité Temporaire :
+        </span>
+        <div class="code">${safeResetCode}</div>
+        <p style="margin: 8px 0 0; font-size: 11px; color: #A8A29E;">
+          ⏱️ Ce code est valable pendant <strong>15 minutes</strong>.
+        </p>
+      </div>
+
+      <p style="font-size: 13px; color: #78716C; line-height: 1.5;">
+        Saisissez ce code à 6 chiffres sur la page de connexion pour définir votre nouveau mot de passe. Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email en toute sécurité.
+      </p>
+    </div>
+
+    <div class="footer">
+      <p style="margin: 0 0 5px;"><strong>ECE Terroir — Association Gastronomique de l'ECE Paris</strong></p>
+      <p style="margin: 0;">Campus Eiffel 1 • 10 Rue Sextius Michel, 75015 Paris</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+export async function sendPasswordResetEmail(params: PasswordResetEmailParams) {
+  const transporter = getTransporter();
+  const html = generatePasswordResetEmailHtml(params);
+  const subject = `🔐 Votre code de réinitialisation de mot de passe : ${params.resetCode} — ECE Terroir`;
+
+  if (!transporter) {
+    console.log(`[SMTP SIMULÉ] Envoi code reset ${params.resetCode} à ${params.email}`);
+    return { success: true, mode: 'simulated', subject, recipient: params.email };
+  }
+
+  const info = await transporter.sendMail({
+    from: DEFAULT_FROM,
+    to: params.email,
+    subject,
+    html,
+  });
+
+  return { success: true, mode: 'smtp_real', messageId: info.messageId, recipient: params.email };
+}

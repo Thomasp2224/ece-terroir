@@ -25,8 +25,9 @@ export default function LoginPage() {
   const { login, signup, user } = useAuth();
   const { addAdminLog } = useData();
 
-  // Mode : 'login' ou 'signup'
-  const [tab, setTab] = useState<'login' | 'signup'>('login');
+  // Mode : 'login', 'signup' ou 'forgot'
+  const [tab, setTab] = useState<'login' | 'signup' | 'forgot'>('login');
+  const [forgotStep, setForgotStep] = useState<'email' | 'code'>('email');
 
   // Form Fields
   const [email, setEmail] = useState('');
@@ -35,6 +36,11 @@ export default function LoginPage() {
   const [fullName, setFullName] = useState('');
   const [promo, setPromo] = useState('ING4 (Promo 2028)');
   const [selectedTerroirs, setSelectedTerroirs] = useState<string[]>(['Savoie', 'Bourgogne']);
+
+  // Forgot password fields
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   // Feedback states
   const [error, setError] = useState('');
@@ -61,8 +67,82 @@ export default function LoginPage() {
         { name: email, email }
       );
       setTimeout(() => {
-        router.push(email.includes('jules') || email.includes('thomas') || email.includes('leonard') ? '/admin' : '/profil');
+        router.push(email.includes('thomas') ? '/admin' : '/profil');
       }, 500);
+    }
+  };
+
+  const handleForgotEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      setLoading(false);
+
+      if (res.ok && data.success) {
+        setSuccessMsg(data.message || 'Code de sécurité envoyé par email.');
+        setForgotStep('code');
+      } else {
+        setError(data.error || 'Erreur lors de la demande de réinitialisation.');
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setError(err.message || 'Erreur réseau lors de la demande.');
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    if (newPassword !== confirmNewPassword) {
+      setError('Les mots de passe ne correspondent pas.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError('Le nouveau mot de passe doit comporter au moins 6 caractères.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: resetCode, newPassword }),
+      });
+      const data = await res.json();
+      setLoading(false);
+
+      if (res.ok && data.success) {
+        setSuccessMsg('Mot de passe réinitialisé avec succès ! Connexion...');
+        // Tentative de connexion immédiate
+        const loginRes = await login(email, newPassword);
+        if (loginRes.success) {
+          setTimeout(() => {
+            router.push(email.includes('thomas') ? '/admin' : '/profil');
+          }, 800);
+        } else {
+          setTab('login');
+          setPassword('');
+        }
+      } else {
+        setError(data.error || 'Erreur lors de la réinitialisation.');
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setError(err.message || 'Erreur réseau.');
     }
   };
 
@@ -211,7 +291,18 @@ export default function LoginPage() {
                 <label className="text-xs font-bold text-[#14281D] block">
                   Mot de Passe
                 </label>
-                <span className="text-[10px] text-[#78716C]">Min. 6 caractères</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTab('forgot');
+                    setForgotStep('email');
+                    setError('');
+                    setSuccessMsg('');
+                  }}
+                  className="text-[11px] font-semibold text-[#58111A] hover:underline"
+                >
+                  Mot de passe oublié ?
+                </button>
               </div>
               <div className="relative">
                 <input
@@ -235,6 +326,147 @@ export default function LoginPage() {
               <ArrowRight className="w-4 h-4 text-[#D4AF37]" />
             </button>
           </form>
+        )}
+
+        {/* TAB 3 : MOT DE PASSE OUBLIÉ */}
+        {tab === 'forgot' && (
+          <div className="space-y-4 relative z-10">
+            {forgotStep === 'email' ? (
+              <form onSubmit={handleForgotEmailSubmit} className="space-y-4">
+                <div className="space-y-1">
+                  <span className="text-xs font-extrabold text-[#58111A] uppercase tracking-wider block">
+                    Étape 1 sur 2 : Récupération
+                  </span>
+                  <p className="text-xs text-[#5C554E] leading-relaxed">
+                    Saisissez votre adresse email étudiante ECE Paris. Nous allons vous envoyer un <strong>code de sécurité temporaire à 6 chiffres</strong>.
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#14281D] block">
+                    Adresse Email ECE Paris
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="prenom.nom@edu.ece.fr"
+                      className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white border border-[#EAE2D8] focus:border-[#D4AF37] text-xs text-[#1D1917] placeholder-[#A8A29E] outline-none shadow-inner"
+                    />
+                    <Mail className="w-4 h-4 text-[#78716C] absolute left-3 top-3" />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 px-4 rounded-2xl bg-[#58111A] hover:bg-[#722F37] text-[#D4AF37] text-xs font-extrabold flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition-all border border-[#D4AF37]/40"
+                >
+                  <span>{loading ? 'Envoi en cours...' : 'Envoyer le Code de Sécurité'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTab('login');
+                      setError('');
+                      setSuccessMsg('');
+                    }}
+                    className="text-xs font-bold text-[#78716C] hover:text-[#14281D] transition-colors"
+                  >
+                    ← Retour à la connexion
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleResetPasswordSubmit} className="space-y-3.5">
+                <div className="space-y-1">
+                  <span className="text-xs font-extrabold text-[#58111A] uppercase tracking-wider block">
+                    Étape 2 sur 2 : Nouveau Mot de Passe
+                  </span>
+                  <p className="text-xs text-[#5C554E] leading-relaxed">
+                    Saisissez le code à 6 chiffres reçu à <strong>{email}</strong> et choisissez votre nouveau mot de passe.
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#14281D] block">
+                    Code de Sécurité (6 chiffres)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    value={resetCode}
+                    onChange={(e) => setResetCode(e.target.value)}
+                    placeholder="Ex: 849201"
+                    className="w-full text-center tracking-[4px] font-mono font-black text-base py-2 rounded-2xl bg-white border border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/30 text-[#58111A] outline-none shadow-inner"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#14281D] block">
+                    Nouveau Mot de Passe (min. 6 car.)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-9 pr-4 py-2 rounded-2xl bg-white border border-[#EAE2D8] focus:border-[#D4AF37] text-xs text-[#1D1917] placeholder-[#A8A29E] outline-none shadow-inner"
+                    />
+                    <Lock className="w-4 h-4 text-[#78716C] absolute left-3 top-2.5" />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#14281D] block">
+                    Confirmer le Nouveau Mot de Passe
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="password"
+                      required
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-9 pr-4 py-2 rounded-2xl bg-white border border-[#EAE2D8] focus:border-[#D4AF37] text-xs text-[#1D1917] placeholder-[#A8A29E] outline-none shadow-inner"
+                    />
+                    <Lock className="w-4 h-4 text-[#78716C] absolute left-3 top-2.5" />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 px-4 rounded-2xl skeuo-btn-pine text-xs font-extrabold flex items-center justify-center gap-2 shadow-md hover:scale-[1.02] transition-all"
+                >
+                  <span>{loading ? 'Validation...' : 'Valider & Se Connecter'}</span>
+                  <CheckCircle2 className="w-4 h-4 text-[#D4AF37]" />
+                </button>
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotStep('email');
+                      setError('');
+                      setSuccessMsg('');
+                    }}
+                    className="text-xs font-bold text-[#78716C] hover:text-[#14281D] transition-colors"
+                  >
+                    ← Renvoyer un autre code
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         )}
 
         {/* TAB 2 : CRÉATION DE COMPTE (SIGN UP) */}

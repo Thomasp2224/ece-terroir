@@ -28,7 +28,10 @@ import {
   Download,
   Eye,
   FileSpreadsheet,
-  QrCode
+  QrCode,
+  Lock,
+  KeyRound,
+  AlertCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import EpicureanPassCard from '@/components/membership/EpicureanPassCard';
@@ -57,6 +60,14 @@ export default function ProfilPage() {
     user?.favoriteTerroirs?.join(', ') || 'Bourgogne, Jura, Savoie'
   );
   const [successToast, setSuccessToast] = useState('');
+
+  // Password change modal state
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   // Certificate modal and generation state
   const [isCertModalOpen, setIsCertModalOpen] = useState(false);
@@ -105,6 +116,51 @@ export default function ProfilPage() {
   const handlePrintCertificate = async () => {
     if (!user) return;
     await printMembershipCertificate(user);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('Les mots de passe ne correspondent pas.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError('Le nouveau mot de passe doit comporter au moins 6 caractères.');
+      return;
+    }
+
+    setPasswordLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user?.email,
+          currentPassword,
+          newPassword,
+        }),
+      });
+      const data = await res.json();
+      setPasswordLoading(false);
+
+      if (res.ok && data.success) {
+        setIsPasswordModalOpen(false);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+        setSuccessToast('Votre mot de passe a été modifié avec succès !');
+        setTimeout(() => setSuccessToast(''), 4000);
+      } else {
+        setPasswordError(data.error || 'Erreur lors du changement de mot de passe.');
+      }
+    } catch (err: any) {
+      setPasswordLoading(false);
+      setPasswordError(err.message || 'Erreur réseau.');
+    }
   };
 
   if (!user) {
@@ -544,29 +600,137 @@ export default function ProfilPage() {
           </div>
         </div>
 
-        {/* Section RGPD & Données Personnelles */}
-        <div className="bg-[#FFFFFF] rounded-3xl p-6 sm:p-8 border border-[#EAE2D8] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="space-y-1 text-center sm:text-left">
-            <h4 className="font-serif-title font-bold text-base text-[#1D1917] flex items-center justify-center sm:justify-start gap-2">
+        {/* Section RGPD, Sécurité & Mot de Passe */}
+        <div className="bg-[#FFFFFF] rounded-3xl p-6 sm:p-8 border border-[#EAE2D8] shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="space-y-1 text-center md:text-left">
+            <h4 className="font-serif-title font-bold text-base text-[#1D1917] flex items-center justify-center md:justify-start gap-2">
               <ShieldCheck className="w-4 h-4 text-[#1B3B2B]" />
-              Protection des Données & Droits RGPD
+              Sécurité, Mot de Passe & Droits RGPD
             </h4>
             <p className="text-xs text-[#78716C]">
-              Vos données sont hébergées de façon sécurisée et ne sont jamais partagées à des tiers. Consultez notre{' '}
+              Vos données sont chiffrées et protégées. Consultez notre{' '}
               <Link href="/confidentialite" className="text-[#58111A] font-bold underline">
                 Politique de Confidentialité
               </Link>.
             </p>
           </div>
 
-          <button
-            onClick={() => setIsDeleteModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold transition-all border border-red-200 shrink-0"
-          >
-            Supprimer mon compte
-          </button>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => {
+                setIsPasswordModalOpen(true);
+                setPasswordError('');
+              }}
+              className="px-4 py-2.5 rounded-xl bg-[#FAF7F2] hover:bg-[#F3EDE2] text-[#14281D] font-bold text-xs border border-[#EAE2D8] transition-all flex items-center gap-2 shadow-sm"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-[#58111A]" />
+              <span>Changer de mot de passe</span>
+            </button>
+
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="px-4 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold transition-all border border-red-200"
+            >
+              Supprimer mon compte
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* ======================================================== */}
+      {/* MODAL : CHANGER DE MOT DE PASSE                         */}
+      {/* ======================================================== */}
+      {isPasswordModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setIsPasswordModalOpen(false)}
+        >
+          <div 
+            className="bg-[#FFFFFF] rounded-3xl p-6 sm:p-8 max-w-md w-full border border-[#EAE2D8] shadow-2xl space-y-4 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-[#EAE2D8] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#58111A] text-[#D4AF37] flex items-center justify-center shadow-sm">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <h3 className="font-serif-title font-bold text-base text-[#14281D]">
+                  Modifier mon Mot de Passe
+                </h3>
+              </div>
+              <button 
+                onClick={() => setIsPasswordModalOpen(false)} 
+                className="p-1 rounded-lg hover:bg-[#F6F1EA] text-[#78716C]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {passwordError && (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{passwordError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleChangePassword} className="space-y-3.5 text-xs">
+              <div className="space-y-1">
+                <label className="block font-bold text-[#14281D]">Mot de passe actuel :</label>
+                <input
+                  type="password"
+                  required
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2.5 rounded-xl bg-[#F6F1EA] border border-[#EAE2D8] focus:outline-none focus:border-[#58111A]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block font-bold text-[#14281D]">Nouveau mot de passe (min. 6 car.) :</label>
+                <input
+                  type="password"
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2.5 rounded-xl bg-[#F6F1EA] border border-[#EAE2D8] focus:outline-none focus:border-[#58111A]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="block font-bold text-[#14281D]">Confirmer le nouveau mot de passe :</label>
+                <input
+                  type="password"
+                  required
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2.5 rounded-xl bg-[#F6F1EA] border border-[#EAE2D8] focus:outline-none focus:border-[#58111A]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsPasswordModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-[#F6F1EA] text-[#78716C] font-semibold hover:bg-[#EAE2D8]"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="px-5 py-2.5 rounded-xl bg-[#14281D] hover:bg-[#264E3A] text-[#D4AF37] font-bold shadow-md transition-all flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{passwordLoading ? 'Modification...' : 'Enregistrer'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ======================================================== */}
       {/* MODAL : EDIT MEMBER PROFILE                              */}
