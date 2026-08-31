@@ -44,21 +44,7 @@ export const MOCK_BUREAU = [
 
 export const MOCK_USERS = [
   {
-    id: 'usr-1',
-    email: 'jules.houry@edu.ece.fr',
-    fullName: 'Jules Houry',
-    promo: 'ING4 (Promo 2028)',
-    role: 'admin' as const,
-    status: 'active' as const,
-    membershipStatus: 'active' as const,
-    bio: 'Président passionné de gastronomie régionale, fromages d\'alpage et cuisine de terroir.',
-    favoriteTerroirs: ['Auvergne', 'Jura', 'Savoie'],
-    passwordHash: 'abc4ae174d70fb80797e2e1109002bc5a68cbd2d238ac644de819f349d2ddd8e',
-    createdAt: '2026-01-10T10:00:00Z',
-    lastLogin: '2026-08-25T19:40:00Z',
-  },
-  {
-    id: 'usr-2',
+    id: 'usr-thomas-petit',
     email: 'thomas.petit@edu.ece.fr',
     fullName: 'Thomas Petit',
     promo: 'ING4 (Promo 2028)',
@@ -66,23 +52,9 @@ export const MOCK_USERS = [
     status: 'active' as const,
     membershipStatus: 'active' as const,
     bio: 'Administrateur & Trésorier Tech d\'ECE Terroir • Spécialités régionales et salaisons.',
-    favoriteTerroirs: ['Lorraine', 'Auvergne', 'Périgord'],
-    passwordHash: 'abc4ae174d70fb80797e2e1109002bc5a68cbd2d238ac644de819f349d2ddd8e',
+    favoriteTerroirs: ['Lorraine', 'Auvergne', 'Périgord', 'Savoie'],
+    passwordHash: '0c6da8ad6da6252af75d25f85a23a62ce125fc4b52f3ac2d9e9f0c9a574a36e9', // Terroir2026!
     createdAt: '2026-01-12T11:30:00Z',
     lastLogin: '2026-08-25T18:15:00Z',
-  },
-  {
-    id: 'usr-3',
-    email: 'leonard.brault@edu.ece.fr',
-    fullName: 'Léonard Brault',
-    promo: 'ING4 (Promo 2028)',
-    role: 'admin' as const,
-    status: 'active' as const,
-    membershipStatus: 'active' as const,
-    bio: 'Trésorier du Bureau • Gestion des budgets festins et commandes groupées.',
-    favoriteTerroirs: ['Bourgogne', 'Savoie', 'Pays Basque'],
-    passwordHash: 'abc4ae174d70fb80797e2e1109002bc5a68cbd2d238ac644de819f349d2ddd8e',
-    createdAt: '2026-01-15T09:00:00Z',
-    lastLogin: '2026-08-25T18:30:00Z',
-  },
+  }
 ];
