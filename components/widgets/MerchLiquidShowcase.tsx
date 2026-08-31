@@ -108,7 +108,14 @@ export function MerchLiquidShowcase() {
 
                 {/* Quick Add CTA */}
                 <button
-                  onClick={(e) => handleQuickAdd(product, e)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isMemberActive) {
+                      setSelectedProduct(product);
+                    } else {
+                      handleQuickAdd(product, e);
+                    }
+                  }}
                   className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                     addedId === product.id
                       ? 'bg-emerald-700 text-white shadow'
@@ -120,6 +127,8 @@ export function MerchLiquidShowcase() {
                       <Check className="w-3.5 h-3.5" />
                       <span>Ajouté !</span>
                     </>
+                  ) : !isMemberActive ? (
+                    <span>Découvrir la pièce</span>
                   ) : (
                     <>
                       <Plus className="w-3.5 h-3.5 text-[#D4AF37]" />

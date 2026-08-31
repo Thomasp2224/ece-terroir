@@ -167,7 +167,8 @@ export default function AdminDashboardPage() {
   const [newEventType, setNewEventType] = useState<EventType>('Dégustation');
   const [newEventDate, setNewEventDate] = useState('');
   const [newEventLocation, setNewEventLocation] = useState('Campus ECE Eiffel 1');
-  const [newEventPrice, setNewEventPrice] = useState('12');
+  const [newEventPrice, setNewEventPrice] = useState('15');
+  const [newEventNonMemberPrice, setNewEventNonMemberPrice] = useState('25');
   const [newEventCapacity, setNewEventCapacity] = useState('50');
   const [newEventRequiresBooking, setNewEventRequiresBooking] = useState(true);
   const [newEventHelloAsso, setNewEventHelloAsso] = useState('');
@@ -243,6 +244,7 @@ export default function AdminDashboardPage() {
       location: newEventLocation,
       coverImageUrl: newEventCover,
       priceCents: isGathering ? 0 : Math.round(parseFloat(newEventPrice || '0') * 100),
+      nonMemberPriceCents: isGathering ? undefined : (newEventNonMemberPrice ? Math.round(parseFloat(newEventNonMemberPrice) * 100) : undefined),
       helloAssoUrl: isGathering ? undefined : (newEventHelloAsso || 'https://www.helloasso.com'),
       capacity: isGathering ? 0 : parseInt(newEventCapacity || '50', 10),
       remainingSeats: isGathering ? 0 : parseInt(newEventCapacity || '50', 10),
@@ -1154,14 +1156,25 @@ export default function AdminDashboardPage() {
 
                 {newEventRequiresBooking && (
                   <>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div>
-                        <label className="block font-bold text-[#78716C] mb-1">Tarif (€) :</label>
+                        <label className="block font-bold text-[#58111A] mb-1">Tarif Membre (€) :</label>
                         <input
                           type="number"
+                          placeholder="15"
                           value={newEventPrice}
                           onChange={(e) => setNewEventPrice(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-[#F6F1EA] border border-[#EAE2D8]"
+                          className="w-full px-3 py-2 rounded-xl bg-[#F6F1EA] border border-[#58111A]/40 font-bold text-[#58111A]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-amber-900 mb-1">Tarif Non-Membre (€) :</label>
+                        <input
+                          type="number"
+                          placeholder="25"
+                          value={newEventNonMemberPrice}
+                          onChange={(e) => setNewEventNonMemberPrice(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-[#F6F1EA] border border-amber-400 font-bold text-amber-900"
                         />
                       </div>
                       <div>
@@ -1240,7 +1253,14 @@ export default function AdminDashboardPage() {
                           </div>
                           <h4 className="font-serif-title font-bold text-sm text-[#1D1917]">{evt.title}</h4>
                           <p className="text-[11px] text-[#78716C]">
-                            {formatDateFrench(evt.startDate)} • {evt.location} • {isGathering ? 'Gratuit' : formatPrice(evt.priceCents)}
+                            {formatDateFrench(evt.startDate)} • {evt.location} • {isGathering ? 'Gratuit' : (
+                              <>
+                                <strong className="text-[#58111A]">{formatPrice(evt.priceCents)}</strong> (Membres)
+                                {evt.nonMemberPriceCents ? (
+                                  <> • <span className="text-[#78716C]">{formatPrice(evt.nonMemberPriceCents)}</span> (Non-membres)</>
+                                ) : null}
+                              </>
+                            )}
                           </p>
                         </div>
                       </div>
@@ -2959,14 +2979,24 @@ export default function AdminDashboardPage() {
 
               {editingEvent.requiresBooking !== false && editingEvent.eventType !== 'Rassemblement' && (
                 <>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div>
-                      <label className="block font-bold text-[#78716C] mb-1">Prix (€) :</label>
+                      <label className="block font-bold text-[#58111A] mb-1">Tarif Membre (€) :</label>
                       <input
                         type="number"
                         value={editingEvent.priceCents / 100}
                         onChange={(e) => setEditingEvent({ ...editingEvent, priceCents: Math.round(parseFloat(e.target.value || '0') * 100) })}
-                        className="w-full px-3 py-2 rounded-xl bg-[#F6F1EA] border border-[#EAE2D8]"
+                        className="w-full px-3 py-2 rounded-xl bg-[#F6F1EA] border border-[#58111A]/40 font-bold text-[#58111A]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-amber-900 mb-1">Tarif Non-Membre (€) :</label>
+                      <input
+                        type="number"
+                        placeholder="Optionnel"
+                        value={editingEvent.nonMemberPriceCents !== undefined ? editingEvent.nonMemberPriceCents / 100 : ''}
+                        onChange={(e) => setEditingEvent({ ...editingEvent, nonMemberPriceCents: e.target.value ? Math.round(parseFloat(e.target.value) * 100) : undefined })}
+                        className="w-full px-3 py-2 rounded-xl bg-[#F6F1EA] border border-amber-400 font-bold text-amber-900"
                       />
                     </div>
                     <div>

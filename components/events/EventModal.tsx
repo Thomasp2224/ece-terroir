@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { EventItem } from '@/lib/types';
+import { useAuth } from '@/lib/context/AuthContext';
 import { formatDateTimeFrench, formatPrice } from '@/lib/utils';
 import { downloadEventIcs, getGoogleCalendarUrl, getOutlookCalendarUrl } from '@/lib/utils/calendar';
 import { 
@@ -24,10 +25,12 @@ interface EventModalProps {
 }
 
 export default function EventModal({ event, onClose }: EventModalProps) {
+  const { user } = useAuth();
   const [showCalendarMenu, setShowCalendarMenu] = useState(false);
 
   if (!event) return null;
 
+  const isUserMember = user?.role === 'member' || user?.role === 'admin' || user?.membershipStatus === 'active';
   const isGathering = event.requiresBooking === false || event.eventType === 'Rassemblement';
   const isSoldOut = !isGathering && event.remainingSeats === 0;
   const isUrgent = !isGathering && event.remainingSeats > 0 && event.remainingSeats <= 5;
@@ -212,29 +215,72 @@ export default function EventModal({ event, onClose }: EventModalProps) {
               </button>
             </div>
           ) : (
-            <div className="p-5 rounded-2xl bg-[#14281D] text-[#FDFBF7] border border-[#D4AF37]/30 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="space-y-1 text-center sm:text-left">
-                <span className="text-xs text-[#D4AF37] font-semibold uppercase tracking-wider">
-                  Billetterie Officielle HelloAsso
-                </span>
-                <div className="flex items-center gap-2 justify-center sm:justify-start">
-                  <span className="font-serif-title font-extrabold text-2xl text-[#FDFBF7]">
-                    {event.priceCents === 0 ? 'Gratuit' : formatPrice(event.priceCents)}
-                  </span>
-                  <span className="text-xs text-[#D8CCC0]">/ place</span>
+            <div className="p-6 rounded-3xl bg-[#14281D] text-[#FDFBF7] border border-[#D4AF37]/40 shadow-xl space-y-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="space-y-1.5 text-center sm:text-left">
+                  <div className="flex items-center gap-2 justify-center sm:justify-start">
+                    <span className="text-xs text-[#D4AF37] font-semibold uppercase tracking-wider">
+                      Billetterie HelloAsso
+                    </span>
+                    {isUserMember && (
+                      <span className="px-2 py-0.5 rounded-full bg-[#58111A] text-[#D4AF37] text-[10px] font-extrabold border border-[#D4AF37]/30">
+                        ✓ Tarif Membre Actif
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-wrap items-baseline gap-3 justify-center sm:justify-start">
+                    {/* Member Price */}
+                    <div className="flex items-baseline gap-1">
+                      <span className="font-serif-title font-extrabold text-2xl sm:text-3xl text-[#FAF7F2]">
+                        {event.priceCents === 0 ? 'Gratuit' : formatPrice(event.priceCents)}
+                      </span>
+                      <span className="text-xs text-[#D8CCC0]">
+                        {event.nonMemberPriceCents ? '(Membres)' : '/ place'}
+                      </span>
+                    </div>
+
+                    {/* Non-Member Price if exists */}
+                    {event.nonMemberPriceCents && (
+                      <div className="flex items-baseline gap-1 text-amber-200/90 text-sm">
+                        <span className="font-serif-title font-bold text-lg text-amber-300">
+                          {formatPrice(event.nonMemberPriceCents)}
+                        </span>
+                        <span className="text-xs text-[#D8CCC0]">(Non-membres)</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                <a
+                  href={event.helloAssoUrl || 'https://www.helloasso.com'}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-gradient-to-r from-[#58111A] to-[#722F37] text-[#FDFBF7] hover:scale-105 font-bold text-sm transition-all shadow-xl hover:shadow-2xl flex items-center justify-center gap-2 border border-[#D4AF37]/50 shrink-0"
+                >
+                  <Ticket className="w-4 h-4 text-[#D4AF37]" />
+                  <span>Réserver sur HelloAsso</span>
+                  <ExternalLink className="w-4 h-4 text-white/70" />
+                </a>
               </div>
 
-              <a
-                href={event.helloAssoUrl || 'https://www.helloasso.com'}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#58111A] text-[#FDFBF7] hover:bg-[#722F37] font-bold text-sm transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 border border-[#D4AF37]/50"
-              >
-                <Ticket className="w-4 h-4 text-[#D4AF37]" />
-                <span>Réserver sur HelloAsso</span>
-                <ExternalLink className="w-4 h-4" />
-              </a>
+              {/* Non-Member Upsell Incentive if user is not member */}
+              {!isUserMember && event.nonMemberPriceCents && event.nonMemberPriceCents > event.priceCents && (
+                <div className="p-3.5 rounded-2xl bg-[#58111A]/40 border border-[#D4AF37]/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2.5 text-[#D8CCC0]">
+                    <Sparkles className="w-4 h-4 text-[#D4AF37] shrink-0" />
+                    <span>
+                      Adhérez pour <strong className="text-[#D4AF37]">10€/an</strong> et économisez <strong className="text-[#FAF7F2]">{formatPrice(event.nonMemberPriceCents - event.priceCents)}</strong> sur cet événement !
+                    </span>
+                  </div>
+                  <a
+                    href="/adhesion"
+                    className="px-3.5 py-1.5 rounded-xl bg-[#D4AF37] text-[#58111A] font-extrabold text-[11px] hover:bg-amber-300 transition-colors shadow shrink-0"
+                  >
+                    Prendre mon Pass (10€)
+                  </a>
+                </div>
+              )}
             </div>
           )}
         </div>

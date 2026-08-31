@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/context/AuthContext';
 import { useData } from '@/lib/context/DataContext';
 import { MerchOrder } from '@/lib/types';
 import { formatPrice } from '@/lib/utils';
-import { ShoppingBag, X, Plus, Minus, Trash2, CheckCircle2, ArrowRight, MapPin, QrCode, Ticket } from 'lucide-react';
+import { ShoppingBag, X, Plus, Minus, Trash2, CheckCircle2, ArrowRight, MapPin, QrCode, Ticket, Lock } from 'lucide-react';
 import Link from 'next/link';
 import OrderVoucherModal from './OrderVoucherModal';
 
@@ -14,6 +14,7 @@ export default function CartDrawer() {
   const { items, isDrawerOpen, setIsDrawerOpen, removeItem, updateQuantity, totalCents, clearCart } = useCart();
   const { user } = useAuth();
   const { createOrder } = useData();
+  const isMember = user?.role === 'member' || user?.role === 'admin' || user?.membershipStatus === 'active';
   const [isOrdered, setIsOrdered] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<MerchOrder | null>(null);
   const [showVoucherModal, setShowVoucherModal] = useState(false);
@@ -234,12 +235,28 @@ export default function CartDrawer() {
                 </span>
               </div>
 
-              <button
-                onClick={handleCheckout}
-                className="w-full py-3.5 px-6 rounded-xl bg-[#58111A] text-[#FDFBF7] font-semibold text-sm hover:bg-[#722F37] transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 border border-[#D4AF37]/30"
-              >
-                Confirmer ma Commande Click & Collect
-              </button>
+              {isMember ? (
+                <button
+                  onClick={handleCheckout}
+                  className="w-full py-3.5 px-6 rounded-xl bg-[#58111A] text-[#FDFBF7] font-semibold text-sm hover:bg-[#722F37] transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 border border-[#D4AF37]/30"
+                >
+                  Confirmer ma Commande Click & Collect
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <Link
+                    href="/adhesion"
+                    onClick={() => setIsDrawerOpen(false)}
+                    className="w-full py-3.5 px-6 rounded-xl bg-[#58111A] text-[#D4AF37] font-bold text-xs sm:text-sm hover:bg-[#722F37] transition-all shadow-lg flex items-center justify-center gap-2 border border-[#D4AF37]/50"
+                  >
+                    <Lock className="w-4 h-4 text-[#D4AF37]" />
+                    <span>Adhérer pour valider la commande (10€)</span>
+                  </Link>
+                  <p className="text-[10px] text-center text-[#78716C]">
+                    L&apos;achat de merchandising officiel est réservé aux membres cotisants.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

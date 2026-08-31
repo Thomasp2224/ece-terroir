@@ -64,7 +64,8 @@ export interface EventItem {
   endDate?: string;
   location: string;
   coverImageUrl: string;
-  priceCents: number;
+  priceCents: number; // Prix Membre Adhérent
+  nonMemberPriceCents?: number; // Prix Non-Membre / Visiteur
   helloAssoUrl?: string;
   helloAssoWidgetCode?: string;
   capacity: number;

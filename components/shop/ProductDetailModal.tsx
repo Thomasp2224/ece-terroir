@@ -250,36 +250,53 @@ export default function ProductDetailModal({ product, onClose }: ProductDetailMo
             {/* Bottom Actions */}
             <div className="space-y-3 pt-4 border-t border-[#EAE2D8]">
               <div className="flex items-center gap-3">
-                <button
-                  onClick={handleAddToCart}
-                  disabled={product.stock <= 0}
-                  className={`flex-1 py-3.5 px-6 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-lg flex items-center justify-center gap-2 ${
-                    addedSuccess
-                      ? 'bg-green-700 text-white'
-                      : product.stock <= 0
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-[#58111A] text-[#D4AF37] hover:bg-[#722F37] hover:scale-102'
-                  }`}
-                >
-                  {addedSuccess ? (
-                    <>
-                      <Check className="w-4 h-4 text-white" />
-                      <span>Ajouté au panier !</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingBag className="w-4 h-4 text-[#D4AF37]" />
-                      <span>Ajouter au panier ({formatPrice(isMember ? memberPriceCents : product.priceCents)})</span>
-                    </>
-                  )}
-                </button>
+                {isMember ? (
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={product.stock <= 0}
+                    className={`flex-1 py-3.5 px-6 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-lg flex items-center justify-center gap-2 ${
+                      addedSuccess
+                        ? 'bg-green-700 text-white'
+                        : product.stock <= 0
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-[#58111A] text-[#D4AF37] hover:bg-[#722F37] hover:scale-102'
+                    }`}
+                  >
+                    {addedSuccess ? (
+                      <>
+                        <Check className="w-4 h-4 text-white" />
+                        <span>Ajouté au panier !</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag className="w-4 h-4 text-[#D4AF37]" />
+                        <span>Ajouter au panier ({formatPrice(memberPriceCents)})</span>
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <a
+                    href="/adhesion"
+                    className="flex-1 py-3.5 px-6 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xl flex items-center justify-center gap-2 bg-gradient-to-r from-[#58111A] to-[#722F37] text-[#D4AF37] hover:text-[#FAF7F2] hover:scale-102 border border-[#D4AF37]/50"
+                  >
+                    <Sparkles className="w-4 h-4 text-[#D4AF37]" />
+                    <span>Adhérer pour commander ({formatPrice(memberPriceCents)})</span>
+                  </a>
+                )}
               </div>
 
-              {/* Click & Collect reassurance notice */}
-              <div className="text-[11px] text-[#78716C] flex items-center justify-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-[#58111A]" />
-                <span>Retrait Click & Collect immédiat au Foyer ECE (Bâtiment Eiffel 1)</span>
-              </div>
+              {/* Click & Collect reassurance notice / Member exclusivity info */}
+              {!isMember ? (
+                <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-900 flex items-center gap-2 justify-center text-center">
+                  <ShieldCheck className="w-4 h-4 text-[#58111A] shrink-0" />
+                  <span>Commande réservée aux membres. Prenez votre Pass (10€/an) pour débloquer l&apos;accès.</span>
+                </div>
+              ) : (
+                <div className="text-[11px] text-[#78716C] flex items-center justify-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-[#58111A]" />
+                  <span>Retrait Click & Collect immédiat au Foyer ECE (Bâtiment Eiffel 1)</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

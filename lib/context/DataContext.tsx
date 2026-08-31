@@ -182,6 +182,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             location: e.location,
             coverImageUrl: e.cover_image_url,
             priceCents: e.price_cents,
+            nonMemberPriceCents: e.non_member_price_cents !== null && e.non_member_price_cents !== undefined ? e.non_member_price_cents : undefined,
             helloAssoUrl: e.helloasso_url,
             capacity: e.capacity,
             remainingSeats: e.remaining_seats,
@@ -409,6 +410,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         location: event.location,
         cover_image_url: event.coverImageUrl,
         price_cents: event.priceCents,
+        non_member_price_cents: event.nonMemberPriceCents,
         helloasso_url: event.helloAssoUrl,
         capacity: event.capacity,
         remaining_seats: event.remainingSeats,
@@ -434,6 +436,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (updatedFields.location) payload.location = updatedFields.location;
       if (updatedFields.coverImageUrl) payload.cover_image_url = updatedFields.coverImageUrl;
       if (updatedFields.priceCents !== undefined) payload.price_cents = updatedFields.priceCents;
+      if (updatedFields.nonMemberPriceCents !== undefined) payload.non_member_price_cents = updatedFields.nonMemberPriceCents;
       if (updatedFields.helloAssoUrl !== undefined) payload.helloasso_url = updatedFields.helloAssoUrl;
       if (updatedFields.capacity !== undefined) payload.capacity = updatedFields.capacity;
       if (updatedFields.remainingSeats !== undefined) payload.remaining_seats = updatedFields.remainingSeats;

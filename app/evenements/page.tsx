@@ -171,10 +171,19 @@ export default function EvenementsPage() {
                       {/* Footer & Reserve / Calendar CTA */}
                       <div className="pt-4 border-t border-[#EAE2D8] flex items-center justify-between gap-2">
                         <div>
-                          <span className="text-[10px] text-[#78716C] uppercase font-bold">Accès</span>
-                          <p className="font-serif-title font-extrabold text-base sm:text-lg text-[#58111A]">
-                            {isGathering || event.priceCents === 0 ? 'Accès Libre' : formatPrice(event.priceCents)}
-                          </p>
+                          <span className="text-[10px] text-[#78716C] uppercase font-bold">
+                            {isGathering || event.priceCents === 0 ? 'Accès' : event.nonMemberPriceCents ? 'Tarif Membre / Invité' : 'Tarif'}
+                          </span>
+                          <div className="flex items-baseline gap-1.5">
+                            <p className="font-serif-title font-extrabold text-base sm:text-lg text-[#58111A]">
+                              {isGathering || event.priceCents === 0 ? 'Accès Libre' : formatPrice(event.priceCents)}
+                            </p>
+                            {event.nonMemberPriceCents && !isGathering && (
+                              <span className="text-[11px] text-[#78716C] font-semibold">
+                                • {formatPrice(event.nonMemberPriceCents)}
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         <div className="flex items-center gap-1.5">

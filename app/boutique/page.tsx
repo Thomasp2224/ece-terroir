@@ -4,8 +4,10 @@ import React, { useState } from 'react';
 import { useData } from '@/lib/context/DataContext';
 import { MerchProduct } from '@/lib/types';
 import { useCart } from '@/lib/context/CartContext';
+import { useAuth } from '@/lib/context/AuthContext';
 import { formatPrice } from '@/lib/utils';
-import { ShoppingBag, Plus, MapPin, Sparkles, Filter, Check, ShieldCheck, Tag, Eye } from 'lucide-react';
+import { ShoppingBag, Plus, MapPin, Sparkles, Filter, Check, ShieldCheck, Tag, Eye, Lock, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 import TiltCard from '@/components/ui/TiltCard';
 import ScrollReveal from '@/components/ui/ScrollReveal';
 import ProductDetailModal from '@/components/shop/ProductDetailModal';
@@ -13,11 +15,13 @@ import ProductDetailModal from '@/components/shop/ProductDetailModal';
 export default function BoutiquePage() {
   const { addItem } = useCart();
   const { products } = useData();
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<MerchProduct | null>(null);
 
+  const isMember = user?.role === 'member' || user?.role === 'admin' || user?.membershipStatus === 'active';
   const categories = ['all', 'Textile', 'Verre & Sommelerie', 'Accessoires', 'Coffrets Gourmands'];
 
   const filteredProducts = products.filter((prod) => {
@@ -29,6 +33,10 @@ export default function BoutiquePage() {
   };
 
   const handleAddToCart = (product: MerchProduct) => {
+    if (!isMember) {
+      setSelectedProduct(product);
+      return;
+    }
     const size = product.sizes ? selectedSizes[product.id] || product.sizes[0] : undefined;
     addItem(product, size);
     setAddedProductId(product.id);
@@ -51,10 +59,38 @@ export default function BoutiquePage() {
               Merchandising & Produits d&apos;Exception
             </h1>
             <p className="text-sm sm:text-base text-[#D8CCC0]">
-              Commandez vos hoodies brodés, planches en chêne massif gravées, couteaux de terroir et coffrets gourmands. Retrait <strong>Click & Collect</strong> direct sur le campus de l&apos;ECE Paris (Eiffel 1).
+              Découvrez les hoodies brodés, planches en chêne massif gravées, couteaux de terroir et coffrets gourmands. Retrait <strong>Click & Collect</strong> direct au Foyer Eiffel 1 sur le campus ECE Paris.
             </p>
           </div>
         </ScrollReveal>
+
+        {/* Member exclusivity notice for visitors */}
+        {!isMember && (
+          <ScrollReveal direction="up" delay={0.05} className="p-4 sm:p-5 rounded-2xl bg-[#58111A]/15 border-2 border-[#D4AF37]/50 shadow-md flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#58111A] text-[#D4AF37] flex items-center justify-center shrink-0 shadow">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div className="space-y-0.5 text-xs">
+                <p className="font-bold text-sm text-[#58111A] flex items-center gap-1.5">
+                  <span>Échoppe Réservée aux Adhérents de la Confrérie</span>
+                  <span className="px-2 py-0.5 rounded-full bg-[#D4AF37] text-[#58111A] text-[10px] font-extrabold">Exclusif</span>
+                </p>
+                <p className="text-[#5C554E]">
+                  Les commandes sont réservées aux membres munis du <strong>Pass Épicurien (10€/an)</strong>. Vous pouvez consulter les fiches détaillées et adhérer pour commander.
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href="/adhesion"
+              className="px-5 py-2.5 rounded-xl bg-[#58111A] hover:bg-[#722F37] text-[#D4AF37] font-extrabold text-xs transition-all shadow-md flex items-center gap-1.5 shrink-0 hover:scale-105 border border-[#D4AF37]/40"
+            >
+              <span>Prendre mon Pass (10€)</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </ScrollReveal>
+        )}
 
         {/* Click & Collect Banner Info */}
         <ScrollReveal direction="up" delay={0.1} className="p-4 sm:p-6 rounded-2xl bg-[#F6F1EA] border border-[#EAE2D8] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#58111A]">
@@ -189,11 +225,17 @@ export default function BoutiquePage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleAddToCart(product);
+                          if (!isMember) {
+                            setSelectedProduct(product);
+                          } else {
+                            handleAddToCart(product);
+                          }
                         }}
-                        className={`px-5 py-2.5 rounded-2xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-md ${
+                        className={`px-4 py-2.5 rounded-2xl font-bold text-xs transition-all flex items-center gap-1.5 shadow-md ${
                           addedProductId === product.id
                             ? 'bg-green-700 text-white'
+                            : !isMember
+                            ? 'bg-[#14281D] hover:bg-[#203D2D] text-[#D4AF37] hover:scale-105 border border-[#D4AF37]/40'
                             : 'bg-[#58111A] hover:bg-[#722F37] text-[#FDFBF7] hover:scale-105 border border-[#D4AF37]/30'
                         }`}
                       >
@@ -201,6 +243,11 @@ export default function BoutiquePage() {
                           <>
                             <Check className="w-4 h-4 text-white" />
                             <span>Ajouté !</span>
+                          </>
+                        ) : !isMember ? (
+                          <>
+                            <Eye className="w-3.5 h-3.5 text-[#D4AF37]" />
+                            <span>Voir la fiche</span>
                           </>
                         ) : (
                           <>
