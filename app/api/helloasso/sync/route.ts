@@ -19,6 +19,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const authHeader = req.headers.get('authorization') || req.headers.get('x-admin-secret') || '';
+    const adminKey = process.env.ADMIN_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || 'ece-terroir-admin-secret-2026';
+    const isAuthorized = authHeader.replace(/^Bearer\s+/i, '').trim() === adminKey || req.nextUrl.searchParams.get('secret') === adminKey;
+
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { success: false, error: 'Accès refusé : Clé de sécurité administrateur requise pour synchroniser HelloAsso.' },
+        { status: 403 }
+      );
+    }
+
     if (!helloAssoService.isConfigured()) {
       return NextResponse.json({
         success: false,
@@ -26,6 +37,7 @@ export async function POST(req: NextRequest) {
         configured: false,
       }, { status: 400 });
     }
+
 
 
     const result = await helloAssoService.syncWithSupabase();

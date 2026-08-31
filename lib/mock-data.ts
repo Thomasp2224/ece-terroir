@@ -53,7 +53,7 @@ export const MOCK_USERS = [
     membershipStatus: 'active' as const,
     bio: 'Administrateur & Trésorier Tech d\'ECE Terroir • Spécialités régionales et salaisons.',
     favoriteTerroirs: ['Lorraine', 'Auvergne', 'Périgord', 'Savoie'],
-    passwordHash: '0c6da8ad6da6252af75d25f85a23a62ce125fc4b52f3ac2d9e9f0c9a574a36e9', // Terroir2026!
+    passwordHash: '0c6da8ad6da6252af75d25f85a23a62ce125fc4b52f3ac2d9e9f0c9a574a36e9',
     createdAt: '2026-01-12T11:30:00Z',
     lastLogin: '2026-08-25T18:15:00Z',
   }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isEceEmail, normalizeEmail, hashPassword } from '@/lib/utils/auth-security';
 import { UserProfile } from '@/lib/types';
 import { supabase } from '@/lib/supabase/client';
-import { saveStoredUser } from '@/lib/utils/users-store';
+import { getStoredUser, saveStoredUser } from '@/lib/utils/users-store';
 import { checkRateLimit, getClientIp } from '@/lib/utils/rate-limiter';
 
 export async function POST(req: NextRequest) {
@@ -61,9 +61,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 4. Vérification d'unicité du compte (Protection contre l'écrasement de compte)
+    const existingStored = getStoredUser(normalizedEmail);
+    if (existingStored) {
+      return NextResponse.json(
+        { success: false, error: 'Un compte existe déjà avec cette adresse email. Veuillez vous connecter.' },
+        { status: 409 }
+      );
+    }
+
+    try {
+      if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
+        const { data: existingSb } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', normalizedEmail)
+          .maybeSingle();
+
+        if (existingSb) {
+          return NextResponse.json(
+            { success: false, error: 'Un compte existe déjà avec cette adresse email. Veuillez vous connecter.' },
+            { status: 409 }
+          );
+        }
+      }
+    } catch (e) {}
+
     const hashedPassword = await hashPassword(password);
 
-    // 4. Création du profil utilisateur (Rôle initial : VISITEUR)
+    // 5. Création du profil utilisateur (Rôle initial : VISITEUR)
     const newUser: UserProfile = {
       id: `usr-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       email: normalizedEmail,
@@ -82,7 +108,7 @@ export async function POST(req: NextRequest) {
     // Sauvegarder dans le store partagé
     saveStoredUser(newUser);
 
-    // 5. Enregistrement optionnel sur Supabase si configuré
+    // 6. Enregistrement optionnel sur Supabase si configuré
     try {
       if (process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('placeholder')) {
         const { error: sbError } = await supabase.from('profiles').insert([

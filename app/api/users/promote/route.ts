@@ -24,24 +24,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const authHeader = req.headers.get('authorization') || '';
-    const adminKey = process.env.ADMIN_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const authHeader = req.headers.get('authorization') || req.headers.get('x-admin-secret') || '';
+    const adminKey = process.env.ADMIN_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || 'ece-terroir-admin-secret-2026';
 
     // Body parsing
     const body = await req.json().catch(() => ({}));
-    const { userId, newRole, newStatus, newMembershipStatus, reviewerEmail, adminSecret } = body;
+    const { userId, newRole, newStatus, newMembershipStatus, adminSecret } = body;
 
-    // Authorization verification
-    const isHeaderAuthorized = adminKey && authHeader.replace(/^Bearer\s+/i, '') === adminKey;
-    const isSecretAuthorized = adminKey && adminSecret === adminKey;
-    const isFounderAdmin = reviewerEmail && INITIAL_FOUNDER_ADMINS.some((a) => a.email.toLowerCase() === reviewerEmail.toLowerCase());
+    // Authorization verification stricte (Header Bearer ou Secret)
+    const isHeaderAuthorized = authHeader.replace(/^Bearer\s+/i, '').trim() === adminKey;
+    const isSecretAuthorized = adminSecret && adminSecret.trim() === adminKey;
 
-    if (!isHeaderAuthorized && !isSecretAuthorized && !isFounderAdmin) {
+    if (!isHeaderAuthorized && !isSecretAuthorized) {
       return NextResponse.json(
-        { success: false, error: 'Accès refusé : Privilèges Administrateur requis pour cette opération.' },
+        { success: false, error: 'Accès refusé : Clé de sécurité ou Privilèges Administrateur requis pour cette opération.' },
         { status: 403 }
       );
     }
+
 
     if (!userId) {
       return NextResponse.json(

@@ -171,15 +171,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     }
 
-    const defaultAdminHash = '0c6da8ad6da6252af75d25f85a23a62ce125fc4b52f3ac2d9e9f0c9a574a36e9'; // Terroir2026!
+    const defaultAdminHash = '0c6da8ad6da6252af75d25f85a23a62ce125fc4b52f3ac2d9e9f0c9a574a36e9';
     const targetHash = existingUser.passwordHash || (existingUser.role === 'admin' ? defaultAdminHash : undefined);
 
-    const isValid = 
-      (await verifyPassword(password, targetHash)) ||
-      (trimmedEmail === 'thomas.petit@edu.ece.fr' && (password === 'Terroir2026!' || password === 'ECE-Terroir-2026!'));
+    const isValid = await verifyPassword(password, targetHash);
 
     if (!isValid) {
-      return { success: false, error: 'Mot de passe incorrect. Veuillez vérifier vos identifiants.' };
+      return { success: false, error: 'Identifiants incorrects. Veuillez vérifier votre mot de passe.' };
     }
 
     if (existingUser.status === 'suspended' || existingUser.membershipStatus === 'suspended') {
@@ -189,13 +187,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     }
 
+    const { passwordHash: _, ...safeExistingUser } = existingUser;
     const loggedUser: UserProfile = {
-      ...existingUser,
+      ...safeExistingUser,
       lastLogin: new Date().toISOString(),
     };
 
     setUser(loggedUser);
-    localStorage.setItem('ece_terroir_user', JSON.stringify(loggedUser));
+    try {
+      localStorage.setItem('ece_terroir_user', JSON.stringify(loggedUser));
+    } catch (e) {}
 
     return { success: true };
   };

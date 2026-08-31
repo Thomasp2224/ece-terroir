@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     // 3. Cas spécifique du compte Master Admin Thomas Petit
     if (normalizedEmail === 'thomas.petit@edu.ece.fr') {
-      const adminHash = '0c6da8ad6da6252af75d25f85a23a62ce125fc4b52f3ac2d9e9f0c9a574a36e9'; // Terroir2026!
+      const adminHash = '0c6da8ad6da6252af75d25f85a23a62ce125fc4b52f3ac2d9e9f0c9a574a36e9';
       if (!foundUser) {
         foundUser = {
           id: 'usr-thomas-petit',
@@ -104,22 +104,21 @@ export async function POST(req: NextRequest) {
     // Si l'utilisateur n'existe pas
     if (!foundUser) {
       return NextResponse.json(
-        { success: false, error: 'Aucun compte associé à cette adresse email. Veuillez créer un compte.' },
-        { status: 404 }
+        { success: false, error: 'Identifiants incorrects ou compte inexistant.' },
+        { status: 401 }
       );
     }
 
     // Vérification stricte du mot de passe
-    const isPasswordValid = 
-      (await verifyPassword(password, foundUser.passwordHash)) ||
-      (normalizedEmail === 'thomas.petit@edu.ece.fr' && (password === 'Terroir2026!' || password === 'ECE-Terroir-2026!'));
+    const isPasswordValid = await verifyPassword(password, foundUser.passwordHash);
 
     if (!isPasswordValid) {
       return NextResponse.json(
-        { success: false, error: 'Mot de passe incorrect. Veuillez réessayer.' },
+        { success: false, error: 'Identifiants incorrects. Veuillez réessayer.' },
         { status: 401 }
       );
     }
+
 
     // Vérification de compte suspendu
     if (foundUser.status === 'suspended' || foundUser.membershipStatus === 'suspended') {

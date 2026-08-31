@@ -71,27 +71,23 @@ export async function POST(req: NextRequest) {
       userExists = true;
     }
 
-    if (!userExists) {
-      return NextResponse.json(
-        { success: false, error: 'Aucun compte associé à cette adresse email. Veuillez créer un compte.' },
-        { status: 404 }
-      );
+    if (userExists) {
+      // 2. Générer un code à 6 chiffres
+      const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+      saveResetCode(normalizedEmail, resetCode);
+
+      // 3. Envoyer l'email
+      await sendPasswordResetEmail({
+        fullName,
+        email: normalizedEmail,
+        resetCode,
+      });
     }
 
-    // 2. Générer un code à 6 chiffres
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-    saveResetCode(normalizedEmail, resetCode);
-
-    // 3. Envoyer l'email
-    await sendPasswordResetEmail({
-      fullName,
-      email: normalizedEmail,
-      resetCode,
-    });
-
+    // Réponse uniforme et neutre (Protection contre l'énumération d'utilisateurs OWASP)
     return NextResponse.json({
       success: true,
-      message: `Un code de sécurité à 6 chiffres a été envoyé à l'adresse ${normalizedEmail}.`,
+      message: `Si un compte est associé à l'adresse ${normalizedEmail}, un code de sécurité à 6 chiffres vous a été envoyé par email.`,
     });
   } catch (error: any) {
     return NextResponse.json(
@@ -99,4 +95,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+
 }

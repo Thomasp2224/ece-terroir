@@ -40,13 +40,14 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Vérification du code de sécurité
-    const isCodeValid = verifyResetCode(normalizedEmail, code);
-    if (!isCodeValid) {
+    const checkResult = verifyResetCode(normalizedEmail, code);
+    if (!checkResult.valid) {
       return NextResponse.json(
-        { success: false, error: 'Code de sécurité invalide ou expiré (délai de 15 minutes dépassé).' },
+        { success: false, error: checkResult.error || 'Code de sécurité invalide ou expiré.' },
         { status: 400 }
       );
     }
+
 
     // 2. Hash du nouveau mot de passe
     const hashedPassword = await hashPassword(newPassword);

@@ -65,9 +65,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Vérifier le mot de passe actuel
-    const isCurrentValid = 
-      (await verifyPassword(currentPassword, currentHash)) ||
-      (normalizedEmail === 'thomas.petit@edu.ece.fr' && (currentPassword === 'Terroir2026!' || currentPassword === 'ECE-Terroir-2026!'));
+    const isCurrentValid = await verifyPassword(currentPassword, currentHash);
 
     if (!isCurrentValid) {
       return NextResponse.json(
