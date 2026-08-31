@@ -148,12 +148,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
     }
 
-    // 2. Vérification du mot de passe
-    if (password) {
-      const isValid = await verifyPassword(password, existingUser.passwordHash || 'demo_bypass');
-      if (!isValid) {
-        return { success: false, error: 'Mot de passe incorrect. Veuillez vérifier vos identifiants.' };
-      }
+    // 2. Vérification stricte et obligatoire du mot de passe
+    if (!password) {
+      return { success: false, error: 'Veuillez renseigner votre mot de passe.' };
+    }
+
+    const isValid = await verifyPassword(password, existingUser.passwordHash);
+    if (!isValid) {
+      return { success: false, error: 'Mot de passe incorrect. Veuillez vérifier vos identifiants.' };
     }
 
     // 3. Vérification de suspension

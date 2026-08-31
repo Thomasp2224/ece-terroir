@@ -3,11 +3,27 @@ import { isEceEmail, normalizeEmail, hashPassword } from '@/lib/utils/auth-secur
 import { UserProfile } from '@/lib/types';
 import { supabase } from '@/lib/supabase/client';
 import { saveStoredUser } from '@/lib/utils/users-store';
+import { checkRateLimit, getClientIp } from '@/lib/utils/rate-limiter';
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req.headers);
+    const rateLimit = checkRateLimit({
+      key: `signup:${ip}`,
+      maxRequests: 5,
+      windowMs: 60 * 1000, // max 5 accounts created per minute per IP
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: `Trop de créations de compte. Veuillez patienter ${rateLimit.resetSeconds} secondes.` },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const { email, password, fullName, promo, favoriteTerroirs } = body;
+
 
     const normalizedEmail = normalizeEmail(email || '');
 

@@ -1,8 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { helloAssoService } from '@/lib/helloasso/client';
+import { checkRateLimit, getClientIp } from '@/lib/utils/rate-limiter';
+import { INITIAL_FOUNDER_ADMINS } from '@/lib/utils/users-store';
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req.headers);
+    const rateLimit = checkRateLimit({
+      key: `helloasso-sync:${ip}`,
+      maxRequests: 15,
+      windowMs: 60 * 1000,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: `Trop de requêtes. Veuillez patienter ${rateLimit.resetSeconds} secondes.` },
+        { status: 429 }
+      );
+    }
+
     if (!helloAssoService.isConfigured()) {
       return NextResponse.json({
         success: false,
@@ -10,6 +26,7 @@ export async function POST(req: NextRequest) {
         configured: false,
       }, { status: 400 });
     }
+
 
     const result = await helloAssoService.syncWithSupabase();
     return NextResponse.json({

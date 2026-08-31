@@ -109,22 +109,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickLogin = async (asType: 'jules' | 'thomas' | 'leonard') => {
-    setLoading(true);
-    setError('');
-    if (asType === 'jules') {
-      await login('jules.houry@edu.ece.fr', 'admin123');
-      router.push('/admin');
-    } else if (asType === 'thomas') {
-      await login('thomas.petit@edu.ece.fr', 'admin123');
-      router.push('/admin');
-    } else {
-      await login('leonard.brault@edu.ece.fr', 'admin123');
-      router.push('/admin');
-    }
-    setLoading(false);
-  };
-
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-6 liquid-glass p-6 sm:p-9 rounded-3xl border border-white/90 shadow-2xl relative overflow-hidden bg-white/80">
@@ -365,37 +349,15 @@ export default function LoginPage() {
           </form>
         )}
 
-        {/* Quick Access Bureau Admins */}
-        <div className="pt-4 border-t border-[#EAE2D8] space-y-2 relative z-10">
-          <span className="text-[10px] font-extrabold text-[#78716C] uppercase tracking-wider block text-center">
-            👑 Accès Rapide Bureau Administrateurs (1 clic) :
-          </span>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('jules')}
-              className="p-2 rounded-2xl bg-white border border-[#D4AF37]/50 hover:border-[#14281D] text-[10px] font-bold text-[#14281D] shadow-sm hover:shadow transition-all flex flex-col items-center justify-center text-center gap-0.5"
-            >
-              <Crown className="w-3 h-3 text-[#D4AF37]" />
-              <span>Jules (Président)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('thomas')}
-              className="p-2 rounded-2xl bg-white border border-[#D4AF37]/50 hover:border-[#14281D] text-[10px] font-bold text-[#14281D] shadow-sm hover:shadow transition-all flex flex-col items-center justify-center text-center gap-0.5"
-            >
-              <ShieldCheck className="w-3 h-3 text-[#D4AF37]" />
-              <span>Thomas (Tech)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('leonard')}
-              className="p-2 rounded-2xl bg-white border border-[#D4AF37]/50 hover:border-[#14281D] text-[10px] font-bold text-[#14281D] shadow-sm hover:shadow transition-all flex flex-col items-center justify-center text-center gap-0.5"
-            >
-              <Award className="w-3 h-3 text-[#D4AF37]" />
-              <span>Léonard (Bureau)</span>
-            </button>
+        {/* Security & Authentication Assurance */}
+        <div className="pt-4 border-t border-[#EAE2D8] space-y-2 relative z-10 text-center">
+          <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-[#14281D]">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
+            <span>Authentification Sécurisée ECE Paris</span>
           </div>
+          <p className="text-[10px] text-[#78716C] leading-relaxed">
+            Seules les adresses institutionnelles de l&apos;ECE (@edu.ece.fr ou @ece.fr) sont autorisées. Les privilèges d&apos;administration du Bureau sont protégés et audités.
+          </p>
         </div>
 
       </div>

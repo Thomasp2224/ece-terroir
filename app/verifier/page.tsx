@@ -47,14 +47,12 @@ function VerifierContent() {
 
     setHasSearched(true);
 
-    // Find in users list by matricule, id, email or full name
+    // Find in users list by exact matricule or ID
     const found = users.find((u) => {
       const userMatricule = getMemberMatricule(u).toLowerCase();
-      const matchMatricule = userMatricule === cleanQuery || userMatricule.includes(cleanQuery);
+      const matchMatricule = userMatricule === cleanQuery;
       const matchId = u.id.toLowerCase() === cleanQuery;
-      const matchEmail = u.email.toLowerCase() === cleanQuery;
-      const matchName = u.fullName.toLowerCase().includes(cleanQuery);
-      return matchMatricule || matchId || matchEmail || matchName;
+      return matchMatricule || matchId;
     });
 
     setMatchedMember(found || null);
@@ -64,13 +62,6 @@ function VerifierContent() {
     if (queryId) {
       setSearchMatricule(queryId);
       performSearch(queryId);
-    } else if (users.length > 0) {
-      // Default to first member for immediate demo if no param
-      const firstMember = users.find((u) => u.role === 'member' || u.role === 'admin');
-      if (firstMember) {
-        setSearchMatricule(getMemberMatricule(firstMember));
-        performSearch(getMemberMatricule(firstMember));
-      }
     }
   }, [queryId, users]);
 
@@ -78,6 +69,7 @@ function VerifierContent() {
     e.preventDefault();
     performSearch(searchMatricule);
   };
+
 
   const isSuspended = matchedMember?.status === 'suspended' || matchedMember?.membershipStatus === 'suspended';
   const isMember = matchedMember && (matchedMember.role === 'member' || matchedMember.role === 'admin' || matchedMember.membershipStatus === 'active') && !isSuspended;
@@ -221,7 +213,9 @@ function VerifierContent() {
                 <h4 className="font-serif-title font-extrabold text-lg text-[#1D1917]">
                   {matchedMember.fullName}
                 </h4>
-                <p className="text-xs text-[#78716C]">{matchedMember.email}</p>
+                <p className="text-xs text-[#78716C]">
+                  {matchedMember.email ? matchedMember.email.replace(/(.{2})(.*)(@.*)/, '$1***$3') : ''}
+                </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-[#F6F1EA] border border-[#EAE2D8] space-y-1">

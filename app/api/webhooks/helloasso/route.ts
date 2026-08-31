@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/client';
 import { sendMembershipEmail } from '@/lib/email/mailer';
+import { checkRateLimit, getClientIp } from '@/lib/utils/rate-limiter';
+import { isEceEmail, normalizeEmail } from '@/lib/utils/auth-security';
 
 interface HelloAssoWebhookPayload {
   eventType: 'Order' | 'Payment' | 'Form';
@@ -31,7 +33,38 @@ interface HelloAssoWebhookPayload {
 
 export async function POST(req: NextRequest) {
   try {
-    const payload = (await req.json()) as HelloAssoWebhookPayload;
+    const ip = getClientIp(req.headers);
+    const rateLimit = checkRateLimit({
+      key: `webhook-helloasso:${ip}`,
+      maxRequests: 60,
+      windowMs: 60 * 1000,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: `Trop de requêtes webhook. Veuillez patienter ${rateLimit.resetSeconds} secondes.` },
+        { status: 429 }
+      );
+    }
+
+    // 1. Validation de la signature / Secret Webhook
+    const expectedSecret = process.env.HELLOASSO_WEBHOOK_SECRET || process.env.WEBHOOK_SECRET;
+    const providedSecret = 
+      req.headers.get('x-helloasso-secret') || 
+      req.headers.get('x-webhook-secret') || 
+      req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ||
+      req.nextUrl.searchParams.get('secret');
+
+    // En environnement de production avec secret configuré, vérification stricte
+    if (expectedSecret && providedSecret !== expectedSecret) {
+      return NextResponse.json(
+        { success: false, error: 'Signature ou secret de Webhook invalide.' },
+        { status: 401 }
+      );
+    }
+
+    const payload = (await req.json().catch(() => null)) as HelloAssoWebhookPayload;
+
 
     if (!payload || !payload.data) {
       return NextResponse.json(

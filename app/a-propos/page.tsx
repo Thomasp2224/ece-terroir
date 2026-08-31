@@ -100,6 +100,59 @@ export default function AProposPage() {
             </TiltCard>
           </div>
         </ScrollReveal>
+
+        {/* Support Flow & FAQ Section */}
+        <ScrollReveal direction="up" className="rounded-3xl bg-[#14281D] text-[#FAF7F2] border border-[#D4AF37]/40 p-8 sm:p-12 shadow-2xl space-y-8">
+          <div className="text-center max-w-2xl mx-auto space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#58111A] text-[#D4AF37] text-xs font-bold uppercase tracking-wider border border-[#D4AF37]/30">
+              <Sparkles className="w-3.5 h-3.5" /> Questions Fréquentes & Support
+            </div>
+            <h3 className="font-serif-title font-extrabold text-2xl sm:text-4xl text-[#FAF7F2]">
+              Besoin d&apos;aide ou d&apos;informations ?
+            </h3>
+            <p className="text-xs sm:text-sm text-[#D8CCC0]">
+              Tout ce que vous devez savoir sur les adhésions, les commandes et les banquets.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div className="p-5 rounded-2xl bg-white/10 border border-white/15 space-y-2">
+              <h4 className="font-serif-title font-bold text-base text-[#D4AF37]">
+                🧀 Comment fonctionne le Pass Épicurien (10€) ?
+              </h4>
+              <p className="text-[#D8CCC0] leading-relaxed">
+                Le Pass est valable toute l&apos;année universitaire 2026-2027. Il vous donne un accès prioritaire et des tarifs réduits sur tous les banquets, -15% sur l&apos;échoppe et une attestation d&apos;adhésion A4 officielle.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white/10 border border-white/15 space-y-2">
+              <h4 className="font-serif-title font-bold text-base text-[#D4AF37]">
+                📦 Comment retirer mes commandes de merch ?
+              </h4>
+              <p className="text-[#D8CCC0] leading-relaxed">
+                Les commandes s&apos;effectuent en Click & Collect. Présentez votre bon de commande avec QR code au Foyer des Élèves (Bâtiment Eiffel 1) lors des permanences ou des soirées terroir.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white/10 border border-white/15 space-y-2">
+              <h4 className="font-serif-title font-bold text-base text-[#D4AF37]">
+                🍷 Puis-je venir aux soirées sans être adhérent ?
+              </h4>
+              <p className="text-[#D8CCC0] leading-relaxed">
+                Oui ! Les rassemblements libres sont ouverts à tous les étudiants. Pour les grands banquets à places limitées, un tarif invité/non-membre est disponible (ou vous pouvez adhérer pour 10€ pour profiter du tarif réduit).
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white/10 border border-white/15 space-y-2">
+              <h4 className="font-serif-title font-bold text-base text-[#D4AF37]">
+                💬 Comment contacter le Bureau ?
+              </h4>
+              <p className="text-[#D8CCC0] leading-relaxed">
+                Pour toute question ou proposition de partenariat, écrivez-nous directement à <a href="mailto:eceterroir@gmail.com" className="text-[#D4AF37] font-bold underline">eceterroir@gmail.com</a> ou par message privé sur Instagram <a href="https://instagram.com/eceterroir" target="_blank" rel="noreferrer" className="text-[#D4AF37] underline">@eceterroir</a>.
+              </p>
+            </div>
+          </div>
+        </ScrollReveal>
       </div>
 
       {/* Embedded Bureau & Mission */}

@@ -5,6 +5,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { CartProvider } from "@/lib/context/CartContext";
 import { AuthProvider } from "@/lib/context/AuthContext";
 import { DataProvider } from "@/lib/context/DataContext";
+import { Analytics } from "@vercel/analytics/react";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -46,6 +47,7 @@ export default function RootLayout({
               <AppShell>
                 {children}
               </AppShell>
+              <Analytics />
             </CartProvider>
           </AuthProvider>
         </DataProvider>

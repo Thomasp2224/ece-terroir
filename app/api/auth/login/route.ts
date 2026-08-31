@@ -3,13 +3,29 @@ import { normalizeEmail, verifyPassword } from '@/lib/utils/auth-security';
 import { UserProfile } from '@/lib/types';
 import { supabase } from '@/lib/supabase/client';
 import { getStoredUser } from '@/lib/utils/users-store';
+import { checkRateLimit, getClientIp } from '@/lib/utils/rate-limiter';
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req.headers);
+    const rateLimit = checkRateLimit({
+      key: `login:${ip}`,
+      maxRequests: 10,
+      windowMs: 60 * 1000, // 10 attempts per minute per IP
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: `Trop de tentatives de connexion. Veuillez réessayer dans ${rateLimit.resetSeconds} secondes.` },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const { email, password } = body;
 
     const normalizedEmail = normalizeEmail(email || '');
+
 
     if (!normalizedEmail || !password) {
       return NextResponse.json(
@@ -64,8 +80,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Vérification du mot de passe
-    const isPasswordValid = await verifyPassword(password, foundUser.passwordHash || 'demo_bypass');
+    // Vérification stricte du mot de passe
+    const isPasswordValid = await verifyPassword(password, foundUser.passwordHash);
     if (!isPasswordValid) {
       return NextResponse.json(
         { success: false, error: 'Mot de passe incorrect. Veuillez réessayer.' },

@@ -12,6 +12,7 @@ export const INITIAL_FOUNDER_ADMINS: UserProfile[] = [
     membershipStatus: 'active',
     bio: 'Président d\'ECE Terroir • Passionné des terroirs et fromages d\'alpage.',
     favoriteTerroirs: ['Auvergne', 'Jura', 'Savoie'],
+    passwordHash: 'abc4ae174d70fb80797e2e1109002bc5a68cbd2d238ac644de819f349d2ddd8e', // ECE-Terroir-2026!
     createdAt: '2026-01-10T10:00:00Z',
     lastLogin: new Date().toISOString(),
   },
@@ -25,6 +26,7 @@ export const INITIAL_FOUNDER_ADMINS: UserProfile[] = [
     membershipStatus: 'active',
     bio: 'Administrateur & Trésorier Tech d\'ECE Terroir.',
     favoriteTerroirs: ['Lorraine', 'Auvergne', 'Périgord'],
+    passwordHash: 'abc4ae174d70fb80797e2e1109002bc5a68cbd2d238ac644de819f349d2ddd8e', // ECE-Terroir-2026!
     createdAt: '2026-01-12T11:30:00Z',
     lastLogin: new Date().toISOString(),
   },
@@ -38,6 +40,7 @@ export const INITIAL_FOUNDER_ADMINS: UserProfile[] = [
     membershipStatus: 'active',
     bio: 'Administrateur Bureau d\'ECE Terroir.',
     favoriteTerroirs: ['Savoie', 'Pays Basque', 'Bourgogne'],
+    passwordHash: 'abc4ae174d70fb80797e2e1109002bc5a68cbd2d238ac644de819f349d2ddd8e', // ECE-Terroir-2026!
     createdAt: '2026-02-01T14:00:00Z',
     lastLogin: new Date().toISOString(),
   }

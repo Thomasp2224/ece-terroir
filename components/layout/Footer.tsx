@@ -99,19 +99,21 @@ export function Footer() {
               </p>
               <p className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-[#D4AF37] shrink-0" />
-                <span>terroir@associations.ece.fr</span>
+                <a href="mailto:eceterroir@gmail.com" className="hover:text-[#D4AF37] underline">eceterroir@gmail.com</a>
               </p>
             </div>
           </div>
 
         </div>
 
-        {/* Bottom copyright */}
+        {/* Bottom copyright & Legal */}
         <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-[#A8A29E]">
-          <p>© 2026-2027 ECE Terroir (Loi 1901) • Fait avec passion pour le Terroir</p>
-          <div className="flex items-center gap-4">
-            <Link href="/a-propos" className="hover:text-[#D4AF37]">À Propos</Link>
-            <Link href="/admin" className="hover:text-[#D4AF37]">Bureau Admin</Link>
+          <p>© 2026-2027 ECE Terroir (Association Loi 1901) • Campus ECE Paris</p>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <Link href="/mentions-legales" className="hover:text-[#D4AF37] transition-colors">Mentions Légales</Link>
+            <Link href="/confidentialite" className="hover:text-[#D4AF37] transition-colors">Confidentialité & RGPD</Link>
+            <Link href="/a-propos" className="hover:text-[#D4AF37] transition-colors">À Propos</Link>
+            <Link href="/admin" className="hover:text-[#D4AF37] transition-colors font-bold text-[#D4AF37]">Bureau Admin</Link>
           </div>
         </div>
       </div>

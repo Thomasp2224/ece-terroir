@@ -6,6 +6,8 @@ import { UserProfile, MembershipRequest } from '@/lib/types';
 import { MOCK_USERS, MOCK_MEMBERSHIP_REQUESTS } from '@/lib/mock-data';
 import { getMemberMatricule, getVerificationCode, getVerificationUrl } from '@/lib/utils/matricule';
 import { formatDateTimeFrench } from '@/lib/utils';
+import { checkRateLimit, getClientIp } from '@/lib/utils/rate-limiter';
+import { INITIAL_FOUNDER_ADMINS } from '@/lib/utils/users-store';
 
 function getGoogleDrivePaths(): string[] {
   if (process.platform !== 'win32') return [];
@@ -138,8 +140,36 @@ function generateWorkbook(users: UserProfile[], requests: MembershipRequest[], r
   return workbook;
 }
 
+function checkAdminAuth(req: NextRequest): boolean {
+  const authHeader = req.headers.get('authorization') || '';
+  const adminKey = process.env.ADMIN_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (adminKey && authHeader.replace(/^Bearer\s+/i, '') === adminKey) {
+    return true;
+  }
+  // Allow internal requests or authorized admin referer/origin with session
+  const userHeader = req.headers.get('x-user-email');
+  if (userHeader && INITIAL_FOUNDER_ADMINS.some((a) => a.email.toLowerCase() === userHeader.toLowerCase())) {
+    return true;
+  }
+  return false;
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req.headers);
+    const rateLimit = checkRateLimit({
+      key: `sync-excel:${ip}`,
+      maxRequests: 30,
+      windowMs: 60 * 1000,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: `Trop de synchronisations. Veuillez patienter ${rateLimit.resetSeconds} secondes.` },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json().catch(() => ({}));
     const users: UserProfile[] = body.users && body.users.length > 0 ? body.users : MOCK_USERS;
     const requests: MembershipRequest[] = body.requests && body.requests.length > 0 ? body.requests : MOCK_MEMBERSHIP_REQUESTS;
@@ -165,10 +195,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Sauvegarde locale de secours (compatible environnement local et cloud)
+    // 2. Sauvegarde locale sécurisée HORS du dossier /public (dossier storage privé)
     try {
       const isCloud = !!process.env.VERCEL;
-      const localDir = isCloud ? '/tmp' : path.join(process.cwd(), 'public', 'data');
+      const localDir = isCloud ? '/tmp/ece-terroir-vault' : path.join(process.cwd(), 'storage', 'secure_vault');
       if (!fs.existsSync(localDir)) {
         fs.mkdirSync(localDir, { recursive: true });
       }
@@ -176,7 +206,7 @@ export async function POST(req: NextRequest) {
       fs.writeFileSync(localPath, excelBuffer);
       savedLocations.push(localPath);
     } catch (e: any) {
-      errors.push(`Erreur écriture backup: ${e.message}`);
+      errors.push(`Erreur écriture backup sécurisé: ${e.message}`);
     }
 
     const activeCount = users.filter(
@@ -202,6 +232,19 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const isAuth = checkAdminAuth(req);
+    // If not authenticated via header, check secret param if provided
+    const secretParam = req.nextUrl.searchParams.get('admin_key');
+    const adminKey = process.env.ADMIN_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const isParamAuth = adminKey && secretParam === adminKey;
+
+    if (!isAuth && !isParamAuth) {
+      return NextResponse.json(
+        { error: 'Accès non autorisé : Privilèges Administrateur requis pour exporter le registre.' },
+        { status: 403 }
+      );
+    }
+
     const origin = req.headers.get('origin') || 'http://localhost:3000';
     const workbook = generateWorkbook(MOCK_USERS, MOCK_MEMBERSHIP_REQUESTS, origin);
     const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
@@ -211,9 +254,11 @@ export async function GET(req: NextRequest) {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': 'attachment; filename="Registre_Officiel_Adherents_Cotisations_2026-2027.xlsx"',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
       },
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

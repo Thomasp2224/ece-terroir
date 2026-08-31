@@ -1,24 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SocialPost } from '@/lib/types';
+import { checkRateLimit, getClientIp } from '@/lib/utils/rate-limiter';
+import { escapeHtml } from '@/lib/email/mailer';
 
 export const dynamic = 'force-dynamic';
 
+const TIKTOK_URL_REGEX = /^https:\/\/(www\.|vm\.)?tiktok\.com\/(@[\w.-]+\/video\/\d+|[\w.-]+|\S+)/i;
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { url } = body;
+    const ip = getClientIp(req.headers);
+    const rateLimit = checkRateLimit({
+      key: `tiktok-oembed:${ip}`,
+      maxRequests: 20,
+      windowMs: 60 * 1000,
+    });
 
-    if (!url || typeof url !== 'string') {
-      return NextResponse.json({ success: false, error: 'URL TikTok requise.' }, { status: 400 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: `Trop de requêtes. Veuillez patienter ${rateLimit.resetSeconds} secondes.` },
+        { status: 429 }
+      );
     }
 
+    const body = await req.json().catch(() => ({}));
+    const { url } = body;
+
+    if (!url || typeof url !== 'string' || !TIKTOK_URL_REGEX.test(url.trim())) {
+      return NextResponse.json(
+        { success: false, error: 'URL TikTok invalide. Veuillez fournir un lien public officiel TikTok (ex: https://www.tiktok.com/@eceterroir/video/...).' },
+        { status: 400 }
+      );
+    }
+
+    const cleanUrl = url.trim();
+
     // Call official TikTok oEmbed public endpoint
-    const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url.trim())}`;
+    const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(cleanUrl)}`;
     const res = await fetch(oembedUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
     });
+
 
     if (!res.ok) {
       return NextResponse.json(

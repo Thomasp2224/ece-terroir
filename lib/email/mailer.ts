@@ -1,5 +1,18 @@
 import nodemailer from 'nodemailer';
 
+/**
+ * Robust HTML entity escaping to prevent HTML / Template injection (XSS in webmail)
+ */
+export function escapeHtml(str: unknown): string {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // Configuration du transporteur SMTP (Gmail ou personnalisé)
 function getTransporter() {
   const user = process.env.SMTP_USER || process.env.GMAIL_USER;
@@ -38,6 +51,10 @@ export interface MembershipEmailParams {
 }
 
 export function generateMembershipEmailHtml(params: MembershipEmailParams): string {
+  const safeFullName = escapeHtml(params.fullName);
+  const safePromo = escapeHtml(params.promo);
+  const safeMatricule = escapeHtml(params.matricule);
+
   const dateStr = params.approvedAt 
     ? new Date(params.approvedAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
     : new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -73,16 +90,16 @@ export function generateMembershipEmailHtml(params: MembershipEmailParams): stri
     </div>
 
     <div class="content">
-      <p style="font-size: 15px; line-height: 1.6;">Bonjour <strong>${params.fullName}</strong>,</p>
+      <p style="font-size: 15px; line-height: 1.6;">Bonjour <strong>${safeFullName}</strong>,</p>
       <p style="font-size: 14px; line-height: 1.6; color: #5C554E;">
         Le Bureau d'<strong>ECE Terroir</strong> a le grand plaisir de vous confirmer la validation officielle de votre cotisation pour l'année universitaire <strong>2026-2027</strong>.
       </p>
 
       <div class="pass-card">
         <span style="font-size: 10px; font-weight: 800; color: #78716C; text-transform: uppercase; letter-spacing: 1px;">Pass Épicurien Officiel</span>
-        <div class="matricule">${params.matricule}</div>
+        <div class="matricule">${safeMatricule}</div>
         <p style="margin: 0; font-size: 12px; color: #2D5A3F; font-weight: bold;">
-          ${params.fullName} • ${params.promo}
+          ${safeFullName} • ${safePromo}
         </p>
         <p style="margin: 4px 0 0; font-size: 10px; color: #78716C;">
           Adhésion validée le ${dateStr}
@@ -146,14 +163,18 @@ export interface OrderEmailParams {
 }
 
 export function generateOrderEmailHtml(params: OrderEmailParams): string {
-  const itemsHtml = params.items.map((it) => `
+  const safeOrderNumber = escapeHtml(params.orderNumber);
+  const safeUserName = escapeHtml(params.userName);
+  const safePickupLocation = escapeHtml(params.pickupLocation || 'Foyer des Élèves — Campus ECE Eiffel 1');
+
+  const itemsHtml = (params.items || []).map((it) => `
     <tr style="border-bottom: 1px solid #EAE2D8;">
       <td style="padding: 10px 0; font-size: 13px;">
-        <strong>${it.name}</strong> ${it.size ? `<span style="color: #78716C;">(Taille ${it.size})</span>` : ''}
+        <strong>${escapeHtml(it.name)}</strong> ${it.size ? `<span style="color: #78716C;">(Taille ${escapeHtml(it.size)})</span>` : ''}
       </td>
-      <td style="padding: 10px 0; text-align: center; font-size: 13px;">x${it.quantity}</td>
+      <td style="padding: 10px 0; text-align: center; font-size: 13px;">x${Number(it.quantity) || 1}</td>
       <td style="padding: 10px 0; text-align: right; font-size: 13px; font-weight: bold; color: #14281D;">
-        ${((it.priceCents * it.quantity) / 100).toFixed(2)} €
+        ${(((it.priceCents || 0) * (it.quantity || 1)) / 100).toFixed(2)} €
       </td>
     </tr>
   `).join('');
@@ -179,12 +200,12 @@ export function generateOrderEmailHtml(params: OrderEmailParams): string {
       <div style="font-size: 32px;">📦✨</div>
       <h1 style="margin: 10px 0 5px; font-size: 24px;">Commande Confirmée !</h1>
       <p style="margin: 0; font-size: 12px; color: #D4AF37; font-weight: bold; text-transform: uppercase;">
-        Réf : ${params.orderNumber}
+        Réf : ${safeOrderNumber}
       </p>
     </div>
 
     <div class="content">
-      <p style="font-size: 15px;">Bonjour <strong>${params.userName}</strong>,</p>
+      <p style="font-size: 15px;">Bonjour <strong>${safeUserName}</strong>,</p>
       <p style="font-size: 14px; color: #5C554E;">
         Merci pour votre commande sur l'Échoppe ECE Terroir. Vos trésors artisanaux sont réservés et en cours de préparation par l'équipe du Bureau.
       </p>
@@ -204,7 +225,7 @@ export function generateOrderEmailHtml(params: OrderEmailParams): string {
           <tr>
             <td colspan="2" style="padding-top: 15px; font-size: 14px; font-weight: bold;">Total Réglé / À Régler :</td>
             <td style="padding-top: 15px; font-size: 16px; font-weight: 900; text-align: right; color: #14281D;">
-              ${(params.totalCents / 100).toFixed(2)} €
+              ${((params.totalCents || 0) / 100).toFixed(2)} €
             </td>
           </tr>
         </tfoot>
@@ -213,8 +234,8 @@ export function generateOrderEmailHtml(params: OrderEmailParams): string {
       <div class="pickup-box">
         <h4 style="margin: 0 0 5px; color: #14281D; font-size: 14px;">📍 Point de Retrait Click & Collect :</h4>
         <p style="margin: 0; font-size: 12px; color: #5C554E; line-height: 1.5;">
-          <strong>${params.pickupLocation || 'Foyer des Élèves — Campus ECE Eiffel 1'}</strong><br>
-          Présentez votre numéro de commande <strong>${params.orderNumber}</strong> lors de la prochaine permanence ou du rassemblement de vendredi midi.
+          <strong>${safePickupLocation}</strong><br>
+          Présentez votre numéro de commande <strong>${safeOrderNumber}</strong> lors de la prochaine permanence ou du banquet de terroir.
         </p>
       </div>
     </div>
@@ -258,12 +279,18 @@ export interface EventTicketEmailParams {
 }
 
 export function generateEventTicketEmailHtml(params: EventTicketEmailParams): string {
+  const safeEventTitle = escapeHtml(params.eventTitle);
+  const safeEventDate = escapeHtml(params.eventDate);
+  const safeEventLocation = escapeHtml(params.eventLocation || 'Campus ECE Eiffel 1');
+  const safeUserName = escapeHtml(params.userName);
+  const safeTicketCode = escapeHtml(params.ticketCode);
+
   return `
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <title>Votre Billet pour ${params.eventTitle}</title>
+  <title>Votre Billet pour ${safeEventTitle}</title>
   <style>
     body { margin: 0; padding: 0; background-color: #FAF7F2; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
     .container { max-width: 600px; margin: 30px auto; background-color: #FFFFFF; border-radius: 24px; overflow: hidden; border: 1px solid #EAE2D8; box-shadow: 0 20px 40px rgba(20,40,29,0.08); }
@@ -282,21 +309,21 @@ export function generateEventTicketEmailHtml(params: EventTicketEmailParams): st
     </div>
 
     <div style="padding: 30px;">
-      <p style="font-size: 15px;">Bonjour <strong>${params.userName}</strong>,</p>
+      <p style="font-size: 15px;">Bonjour <strong>${safeUserName}</strong>,</p>
       <p style="font-size: 14px; color: #5C554E;">
         Votre place est confirmée pour l'événement gastronomique suivant :
       </p>
 
       <div class="ticket">
-        <h2 style="margin: 0 0 10px; color: #14281D; font-size: 18px;">${params.eventTitle}</h2>
+        <h2 style="margin: 0 0 10px; color: #14281D; font-size: 18px;">${safeEventTitle}</h2>
         <p style="margin: 5px 0; font-size: 13px; color: #58111A; font-weight: bold;">
-          📅 ${params.eventDate}
+          📅 ${safeEventDate}
         </p>
         <p style="margin: 5px 0; font-size: 12px; color: #5C554E;">
-          📍 ${params.eventLocation}
+          📍 ${safeEventLocation}
         </p>
         <div style="margin-top: 15px; font-family: monospace; font-size: 16px; font-weight: 900; color: #14281D; letter-spacing: 2px;">
-          CODE : ${params.ticketCode}
+          CODE : ${safeTicketCode}
         </div>
       </div>
 

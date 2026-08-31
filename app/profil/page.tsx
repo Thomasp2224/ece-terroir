@@ -44,11 +44,12 @@ import {
 
 export default function ProfilPage() {
   const { user, logout, updateProfile } = useAuth();
-  const { events, orders, updateUser, membershipRequests } = useData();
+  const { events, orders, updateUser, deleteUser, membershipRequests } = useData();
   const router = useRouter();
 
   // Edit profile modal state
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [promo, setPromo] = useState(user?.promo || 'ING4 (Promo 2028)');
   const [bio, setBio] = useState(user?.bio || 'Étudiant épicurien de l\'ECE Paris.');
@@ -64,6 +65,13 @@ export default function ProfilPage() {
 
   // Click & Collect voucher modal state
   const [selectedOrderVoucher, setSelectedOrderVoucher] = useState<MerchOrder | null>(null);
+
+  const handleDeleteAccount = () => {
+    if (!user) return;
+    deleteUser(user.id);
+    logout();
+    router.push('/login');
+  };
 
   const handlePreviewCertificate = async () => {
     if (!user) return;
@@ -535,6 +543,29 @@ export default function ProfilPage() {
             )}
           </div>
         </div>
+
+        {/* Section RGPD & Données Personnelles */}
+        <div className="bg-[#FFFFFF] rounded-3xl p-6 sm:p-8 border border-[#EAE2D8] shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="space-y-1 text-center sm:text-left">
+            <h4 className="font-serif-title font-bold text-base text-[#1D1917] flex items-center justify-center sm:justify-start gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#1B3B2B]" />
+              Protection des Données & Droits RGPD
+            </h4>
+            <p className="text-xs text-[#78716C]">
+              Vos données sont hébergées de façon sécurisée et ne sont jamais partagées à des tiers. Consultez notre{' '}
+              <Link href="/confidentialite" className="text-[#58111A] font-bold underline">
+                Politique de Confidentialité
+              </Link>.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setIsDeleteModalOpen(true)}
+            className="px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold transition-all border border-red-200 shrink-0"
+          >
+            Supprimer mon compte
+          </button>
+        </div>
       </div>
 
       {/* ======================================================== */}
@@ -698,6 +729,51 @@ export default function ProfilPage() {
         order={selectedOrderVoucher}
         onClose={() => setSelectedOrderVoucher(null)}
       />
+
+      {/* ======================================================== */}
+      {/* MODAL : CONFIRM ACCOUNT DELETION (RGPD)                  */}
+      {/* ======================================================== */}
+      {isDeleteModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setIsDeleteModalOpen(false)}
+        >
+          <div 
+            className="bg-[#FFFFFF] rounded-3xl p-6 sm:p-8 max-w-md w-full border border-red-200 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-700 flex items-center justify-center mx-auto shadow-sm">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-2">
+              <h3 className="font-serif-title font-bold text-xl text-[#1D1917]">
+                Supprimer définitivement votre compte ?
+              </h3>
+              <p className="text-xs text-[#78716C] leading-relaxed">
+                Conformément au RGPD, cette action effacera l&apos;ensemble de vos données de profil ({user?.email}) de la plateforme. Vous serez immédiatement déconnecté.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl bg-[#F6F1EA] text-[#78716C] text-xs font-semibold hover:bg-[#EAE2D8] transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md transition-all"
+              >
+                Confirmer la suppression
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

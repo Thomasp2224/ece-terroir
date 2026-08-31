@@ -1,6 +1,6 @@
 -- ========================================================
--- ECE TERROIR — SCHÉMA POSTGRESQL OFFICIEL SUPABASE
--- Tables : Profils Utilisateurs, Demandes d'Adhésion, Commandes, Événements
+-- ECE TERROIR — SCHÉMA POSTGRESQL OFFICIEL SUPABASE HARDENED
+-- Tables : Profils Utilisateurs, Demandes d'Adhésion, Commandes, Événements, Émargements, Logs
 -- ========================================================
 
 -- 1. Table des Profils Utilisateurs
@@ -25,11 +25,40 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Active RLS sur profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Lecture publique des profils" ON public.profiles
-  FOR SELECT USING (true);
+-- Helper fonction pour vérifier si l'utilisateur courant est admin
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE POLICY "Lecture authentifiée des profils" ON public.profiles
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Mise à jour de son propre profil" ON public.profiles
   FOR UPDATE USING (auth.uid() = id);
+
+-- Trigger de protection : empêche les utilisateurs normaux de modifier leur propre rôle ou statut
+CREATE OR REPLACE FUNCTION public.protect_profile_privileges()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Si l'utilisateur tente de s'auto-attribuer le rôle admin ou changer son statut sans être admin
+  IF (NEW.role != OLD.role OR NEW.status != OLD.status OR NEW.membership_status != OLD.membership_status) THEN
+    IF NOT public.is_admin() AND auth.role() != 'service_role' THEN
+      RAISE EXCEPTION 'Action non autorisée : Seuls les membres du Bureau peuvent modifier les privilèges ou la cotisation.';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER trg_protect_profile_privileges
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.protect_profile_privileges();
 
 -- 2. Table des Demandes d'Adhésion (Cotisations 10€)
 CREATE TABLE IF NOT EXISTS public.membership_requests (
@@ -50,10 +79,13 @@ CREATE TABLE IF NOT EXISTS public.membership_requests (
 ALTER TABLE public.membership_requests ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "L'utilisateur voit ses demandes" ON public.membership_requests
-  FOR SELECT USING (auth.uid() = user_id);
+  FOR SELECT USING (auth.uid() = user_id OR public.is_admin());
 
 CREATE POLICY "L'utilisateur peut créer une demande" ON public.membership_requests
   FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Les admins peuvent modifier les demandes" ON public.membership_requests
+  FOR UPDATE USING (public.is_admin());
 
 -- 3. Table des Commandes Boutique (Click & Collect)
 CREATE TABLE IF NOT EXISTS public.orders (
@@ -74,10 +106,58 @@ CREATE TABLE IF NOT EXISTS public.orders (
 
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "L'utilisateur voit ses commandes" ON public.orders
-  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "L'utilisateur et admin voient les commandes" ON public.orders
+  FOR SELECT USING (auth.uid() = user_id OR public.is_admin());
 
--- 4. Trigger automatique pour insérer un profil à chaque création dans auth.users
+CREATE POLICY "Création de commande" ON public.orders
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Modification commande par admin" ON public.orders
+  FOR UPDATE USING (public.is_admin());
+
+-- 4. Table des Émargements & Check-ins Soirées
+CREATE TABLE IF NOT EXISTS public.event_checkins (
+  id TEXT PRIMARY KEY,
+  event_id TEXT NOT NULL,
+  event_title TEXT NOT NULL,
+  user_id TEXT,
+  user_matricule TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  user_email TEXT NOT NULL,
+  user_promo TEXT,
+  is_member BOOLEAN DEFAULT false,
+  checked_in_at TIMESTAMPTZ DEFAULT NOW(),
+  checked_in_by TEXT NOT NULL,
+  entry_status TEXT DEFAULT 'valid',
+  notes TEXT
+);
+
+ALTER TABLE public.event_checkins ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Lecture checkins par admin" ON public.event_checkins
+  FOR SELECT USING (public.is_admin());
+
+CREATE POLICY "Insertion checkin par admin" ON public.event_checkins
+  FOR INSERT WITH CHECK (public.is_admin());
+
+-- 5. Table des Logs d'Audit Sécurité
+CREATE TABLE IF NOT EXISTS public.admin_logs (
+  id TEXT PRIMARY KEY,
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  user_email TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  action TEXT NOT NULL,
+  category TEXT NOT NULL,
+  details TEXT NOT NULL,
+  ip_address TEXT
+);
+
+ALTER TABLE public.admin_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Lecture des logs réservée aux admins" ON public.admin_logs
+  FOR SELECT USING (public.is_admin());
+
+-- 6. Trigger automatique pour insérer un profil à chaque création dans auth.users
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -97,6 +177,3 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
--- Insertion des 2 comptes fondateurs par défaut (si nécessaire)
--- Jules Houry (Président) & Thomas Petit (Bureau)

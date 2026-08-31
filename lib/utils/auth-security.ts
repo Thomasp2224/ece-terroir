@@ -17,11 +17,14 @@ export function normalizeEmail(email: string): string {
 }
 
 /**
- * Browser & Server compatible SHA-256 hashing for password security
+ * Browser & Server compatible SHA-256 hashing with salt for password security
  */
+const PASSWORD_PEPPER = process.env.AUTH_PASSWORD_PEPPER || 'ece_terroir_secure_pepper_2026_x89a';
+
 export async function hashPassword(password: string): Promise<string> {
+  if (!password) return '';
   const encoder = new TextEncoder();
-  const data = encoder.encode(password + '_ece_terroir_salt_2026');
+  const data = encoder.encode(password + '_' + PASSWORD_PEPPER);
   
   if (typeof crypto !== 'undefined' && crypto.subtle) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
@@ -29,12 +32,11 @@ export async function hashPassword(password: string): Promise<string> {
     return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
   }
   
-  // Fallback Node crypto if on server without subtle
+  // Fallback Node crypto on server
   try {
     const nodeCrypto = await import('crypto');
-    return nodeCrypto.createHash('sha256').update(password + '_ece_terroir_salt_2026').digest('hex');
+    return nodeCrypto.createHash('sha256').update(password + '_' + PASSWORD_PEPPER).digest('hex');
   } catch {
-    // Basic fallback hash
     let hash = 0;
     for (let i = 0; i < password.length; i++) {
       hash = ((hash << 5) - hash) + password.charCodeAt(i);
@@ -45,14 +47,23 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 /**
- * Verifies password against hashed password
+ * Timing-safe constant-time string comparison
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+/**
+ * Verifies password against securely hashed password (NO backdoor bypasses)
  */
 export async function verifyPassword(password: string, hashedPassword?: string): Promise<boolean> {
-  if (!hashedPassword) return false;
-  // Demo accounts bypass for easy preview
-  if (hashedPassword === 'demo_bypass' || password === 'ece2026' || password === 'admin123') {
-    return true;
-  }
+  if (!password || !hashedPassword) return false;
   const computed = await hashPassword(password);
-  return computed === hashedPassword;
+  return timingSafeEqual(computed, hashedPassword);
 }
+
