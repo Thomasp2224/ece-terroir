@@ -127,22 +127,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // 1. Profils
         const { data: profiles } = await supabase.from('profiles').select('*');
         if (profiles && profiles.length > 0) {
-          const mappedProfiles: UserProfile[] = profiles.map((p) => ({
-            id: p.id,
-            email: p.email,
-            fullName: p.full_name,
-            promo: p.promo,
-            role: p.role,
-            status: p.status,
-            membershipStatus: p.membership_status,
-            bio: p.bio,
-            favoriteTerroirs: p.favorite_terroirs || [],
-            createdAt: p.created_at,
-            lastLogin: p.updated_at || p.created_at,
-          }));
-          setUsers(mappedProfiles);
+          const mappedProfiles: UserProfile[] = profiles
+            .filter((p) => !['arthur.rimbaud@edu.ece.fr', 'jules.houry@edu.ece.fr', 'leonard.brault@edu.ece.fr'].includes(p.email?.toLowerCase()))
+            .map((p) => ({
+              id: p.id,
+              email: p.email,
+              fullName: p.full_name,
+              promo: p.promo,
+              role: p.role,
+              status: p.status,
+              membershipStatus: p.membership_status,
+              bio: p.bio,
+              favoriteTerroirs: p.favorite_terroirs || [],
+              createdAt: p.created_at,
+              lastLogin: p.updated_at || p.created_at,
+            }));
+          setUsers(mappedProfiles.length > 0 ? mappedProfiles : MOCK_USERS);
           try {
-            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(mappedProfiles));
+            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(mappedProfiles.length > 0 ? mappedProfiles : MOCK_USERS));
           } catch (e) {}
         }
 
